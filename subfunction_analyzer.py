@@ -65,11 +65,12 @@ class SubfunctionAnalyzer:
             r'\w+_t'  # 自定义类型
         ]
         
-        # 构建类型模式
-        type_pattern = '|'.join(f'({t})' for t in numeric_types)
+        # 构建类型模式 - 使用非捕获组来避免多个捕获组
+        type_pattern = '|'.join(numeric_types)
         
         # 匹配变量声明
         # 格式: type var_name = ...;  或  type var_name;
+        # 使用两个捕获组：(1) 类型, (2) 变量名
         var_pattern = rf'({type_pattern})\s+(\w+)(?:\s*=\s*[^;]+)?;'
         
         matches = re.finditer(var_pattern, content)
@@ -77,7 +78,7 @@ class SubfunctionAnalyzer:
         seen_vars = set()
         for match in matches:
             var_type = match.group(1).strip()
-            var_name = match.group(-1)  # 最后一个组是变量名
+            var_name = match.group(2)  # 第二个捕获组是变量名
             
             # 避免重复
             var_key = f"{var_type}::{var_name}"

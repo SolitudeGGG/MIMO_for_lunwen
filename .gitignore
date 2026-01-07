@@ -37,6 +37,9 @@ solution*/
 .Xil/
 vivado*.jou
 vivado*.log
+bitwidth_opt_*/
+run_hls_*.tcl
+build_*.log
 
 # OS
 .DS_Store

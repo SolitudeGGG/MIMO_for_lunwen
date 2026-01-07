@@ -56,9 +56,16 @@ class BitwidthOptimizer:
         self.variables = {}
         self.baseline_ber = None
         
-    def parse_header_file(self):
-        """解析头文件，提取所有变量及其位宽信息"""
+    def parse_header_file(self, initial_W=40, initial_I=8):
+        """
+        解析头文件，提取所有变量及其位宽信息
+        
+        参数:
+            initial_W: 初始总位宽（默认40，即整数8位+小数32位）
+            initial_I: 初始整数位宽（默认8位）
+        """
         print(f"解析头文件: {self.header_file}")
+        print(f"  初始位宽设置: W={initial_W}, I={initial_I} (小数{initial_W-initial_I}位)")
         
         with open(self.header_file, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -68,18 +75,28 @@ class BitwidthOptimizer:
         matches = re.findall(pattern, content)
         
         for width, int_bits, var_name in matches:
+            # 使用文件中定义的位宽，或使用指定的初始位宽（取较大者以确保从足够大的位宽开始）
+            file_W = int(width)
+            file_I = int(int_bits)
+            
+            # 如果文件中的位宽小于指定的初始位宽，使用初始位宽
+            use_W = max(file_W, initial_W)
+            use_I = file_I  # 整数位保持文件定义
+            
             self.variables[var_name] = {
-                'init_W': int(width),
-                'init_I': int(int_bits),
-                'current_W': int(width),
-                'current_I': int(int_bits),
-                'min_W': int(int_bits) + 2,  # 至少保留整数位+符号位+2位小数
-                'optimized': False
+                'init_W': use_W,
+                'init_I': use_I,
+                'current_W': use_W,
+                'current_I': use_I,
+                'min_W': use_I + 2,  # 至少保留整数位+符号位+2位小数
+                'optimized': False,
+                'file_W': file_W,  # 记录文件原始位宽供参考
+                'file_I': file_I
             }
         
         print(f"  找到 {len(self.variables)} 个变量")
         for var_name, config in list(self.variables.items())[:5]:
-            print(f"    {var_name}: W={config['init_W']}, I={config['init_I']}")
+            print(f"    {var_name}: W={config['init_W']}, I={config['init_I']} (文件: W={config['file_W']})")
         if len(self.variables) > 5:
             print(f"    ... 还有 {len(self.variables) - 5} 个变量")
         
@@ -415,6 +432,10 @@ def main():
     parser.add_argument('--gaussian-noise-path', 
                        default='/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai',
                        help='高斯噪声文件路径')
+    parser.add_argument('--initial-W', type=int, default=40,
+                       help='初始总位宽 (默认: 40, 即整数8位+小数32位)')
+    parser.add_argument('--initial-I', type=int, default=8,
+                       help='初始整数位宽 (默认: 8)')
     
     args = parser.parse_args()
     
@@ -438,8 +459,8 @@ def main():
     # 创建优化器
     optimizer = BitwidthOptimizer(args.header, args.template, args.ber_threshold)
     
-    # 解析头文件
-    optimizer.parse_header_file()
+    # 解析头文件，使用指定的初始位宽
+    optimizer.parse_header_file(initial_W=args.initial_W, initial_I=args.initial_I)
     
     # 执行优化
     optimizer.optimize_all_variables(mimo_config, args.order)

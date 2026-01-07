@@ -1,0 +1,4 @@
+# Python requirements for MIMO bitwidth optimization
+numpy>=1.19.0
+scikit-commpy>=0.7.0
+jinja2>=3.0.0

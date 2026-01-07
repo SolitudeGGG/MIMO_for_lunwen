@@ -1,0 +1,43 @@
+# Build artifacts
+*.o
+*.exe
+*.out
+test_mimo
+baseline_test
+
+# Generated data
+mimo_data/
+optimized_headers/
+*.json
+!sensitivity_types.hpp.jinja2
+
+# Backup files
+*.bak
+*.tmp
+*_temp.*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# HLS generated files
+*.log
+*.rpt
+solution*/
+.Xil/
+vivado*.jou
+vivado*.log
+
+# OS
+.DS_Store
+Thumbs.db

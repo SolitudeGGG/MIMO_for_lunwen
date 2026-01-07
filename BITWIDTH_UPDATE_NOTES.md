@@ -1,5 +1,94 @@
 # 位宽优化脚本更新说明
 
+## 最新更新 (文件路径适配)
+
+### 新的路径结构
+
+系统现在支持新的MIMO数据文件组织方式：
+
+```
+/home/ggg_wufuqi/hls/MHGD/MHGD/
+├── 8_8_16QAM/                    # MIMO配置目录 (NtxNr_调制方式)
+│   ├── reference_file/
+│   │   ├── bits_SNR=5.txt
+│   │   ├── bits_SNR=10.txt
+│   │   ├── bits_SNR=15.txt
+│   │   ├── bits_SNR=20.txt
+│   │   └── bits_SNR=25.txt
+│   └── input_file/
+│       ├── H_SNR=5.txt
+│       ├── H_SNR=10.txt
+│       ├── H_SNR=15.txt
+│       ├── H_SNR=20.txt
+│       ├── H_SNR=25.txt
+│       ├── y_SNR=5.txt
+│       ├── y_SNR=10.txt
+│       ├── y_SNR=15.txt
+│       ├── y_SNR=20.txt
+│       └── y_SNR=25.txt
+├── 8_8_64QAM/                    # 其他配置
+│   ├── reference_file/
+│   └── input_file/
+└── ...
+
+/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai/
+├── gaussian_random_values_plus.txt
+├── gaussian_random_values_plus_2.txt
+├── gaussian_random_values_plus_3.txt
+└── gaussian_random_values_plus_4.txt
+```
+
+### 使用方法更新
+
+#### 基本用法
+
+```bash
+python3 bitwidth_optimization.py \
+    --nt 8 --nr 8 \
+    --modulation 16 \
+    --snr 20 \
+    --data-path /home/ggg_wufuqi/hls/MHGD/MHGD
+```
+
+脚本会自动构建配置名称 `8_8_16QAM` 并在该目录下查找数据文件。
+
+#### 完整参数示例
+
+```bash
+python3 bitwidth_optimization.py \
+    --header MyComplex_1.h \
+    --template sensitivity_types.hpp.jinja2 \
+    --ber-threshold 1e-4 \
+    --nt 8 --nr 8 \
+    --modulation 16 \
+    --snr 20 \
+    --data-path /home/ggg_wufuqi/hls/MHGD/MHGD \
+    --gaussian-noise-path /home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai \
+    --output-config bitwidth_config_8x8_16QAM_SNR20.json \
+    --output-header MyComplex_optimized_8x8_16QAM_SNR20.h \
+    --order high_to_low
+```
+
+**新增参数**:
+- `--gaussian-noise-path`: 高斯噪声文件路径（默认值已设置）
+
+#### 不同MIMO配置示例
+
+```bash
+# 8x8天线，16QAM调制
+python3 bitwidth_optimization.py --nt 8 --nr 8 --modulation 16 --snr 20
+
+# 8x8天线，64QAM调制
+python3 bitwidth_optimization.py --nt 8 --nr 8 --modulation 64 --snr 25
+
+# 4x4天线，16QAM调制
+python3 bitwidth_optimization.py --nt 4 --nr 4 --modulation 16 --snr 15
+```
+
+每种配置对应不同的数据目录 (例如: 8_8_16QAM, 8_8_64QAM, 4_4_16QAM)。
+
+---
+
 ## 更新内容
 
 ### 1. 使用Vitis HLS进行Csim测试

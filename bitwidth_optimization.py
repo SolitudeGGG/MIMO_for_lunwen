@@ -96,24 +96,35 @@ class BitwidthOptimizer:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(rendered)
     
-    def generate_hls_tcl_script(self, config_name, snr, data_base_path="."):
+    def generate_hls_tcl_script(self, config_name, mimo_config, data_base_path=".", 
+                               gaussian_noise_path="/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai"):
         """
         生成HLS TCL脚本用于Csim
         
         参数:
             config_name: 配置名称
-            snr: 信噪比
+            mimo_config: MIMO配置字典 (包含Nt, Nr, modulation, SNR)
             data_base_path: 测试数据基础路径
+            gaussian_noise_path: 高斯噪声文件路径
         """
+        # 构建MIMO配置名称，例如: 8_8_16QAM
+        nt = mimo_config.get('Nt', 8)
+        nr = mimo_config.get('Nr', 8)
+        modulation = mimo_config.get('modulation', 16)
+        mimo_config_name = f"{nt}_{nr}_{modulation}QAM"
+        
         # 使用更完整的TCL生成器
         tcl_file = generate_full_hls_tcl(
             config_name=config_name,
-            data_base_path=data_base_path
+            data_base_path=data_base_path,
+            mimo_config_name=mimo_config_name,
+            gaussian_noise_path=gaussian_noise_path
         )
         
         return tcl_file
     
-    def compile_and_test(self, config_name, var_configs, mimo_config, data_base_path="."):
+    def compile_and_test(self, config_name, var_configs, mimo_config, data_base_path=".", 
+                        gaussian_noise_path="/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai"):
         """
         使用Vitis HLS编译并运行Csim测试
         
@@ -122,6 +133,7 @@ class BitwidthOptimizer:
             var_configs: 变量位宽配置
             mimo_config: MIMO测试配置 (Nt, Nr, modulation, SNR)
             data_base_path: 测试数据文件的基础路径
+            gaussian_noise_path: 高斯噪声文件路径
         
         返回:
             BER值，如果编译或测试失败返回None
@@ -138,8 +150,7 @@ class BitwidthOptimizer:
         os.rename(temp_header, "MyComplex_1.h")
         
         # 生成HLS TCL脚本
-        snr = mimo_config.get('SNR', 20)
-        tcl_file = self.generate_hls_tcl_script(config_name, snr, data_base_path)
+        tcl_file = self.generate_hls_tcl_script(config_name, mimo_config, data_base_path, gaussian_noise_path)
         
         try:
             # 运行Vitis HLS
@@ -216,7 +227,8 @@ class BitwidthOptimizer:
         baseline_config = {var: self.variables[var] for var in self.variables}
         
         data_path = mimo_config.get('data_path', '.')
-        ber = self.compile_and_test("baseline", baseline_config, mimo_config, data_path)
+        gaussian_noise_path = mimo_config.get('gaussian_noise_path', '/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai')
+        ber = self.compile_and_test("baseline", baseline_config, mimo_config, data_path, gaussian_noise_path)
         
         if ber is None:
             raise RuntimeError("无法获取基准BER")
@@ -248,6 +260,7 @@ class BitwidthOptimizer:
         best_I = current_I
         
         data_path = mimo_config.get('data_path', '.')
+        gaussian_noise_path = mimo_config.get('gaussian_noise_path', '/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai')
         
         # 从当前位宽开始，逐步减小
         for test_W in range(current_W, min_W - 1, -step):
@@ -256,7 +269,7 @@ class BitwidthOptimizer:
             test_config[var_name]['current_W'] = test_W
             
             # 测试此配置
-            ber = self.compile_and_test(f"{var_name}_W{test_W}", test_config, mimo_config, data_path)
+            ber = self.compile_and_test(f"{var_name}_W{test_W}", test_config, mimo_config, data_path, gaussian_noise_path)
             
             if ber is None:
                 # 编译或运行失败，停止优化此变量
@@ -397,8 +410,11 @@ def main():
     parser.add_argument('--order', choices=['sequential', 'high_to_low', 'low_to_high'],
                        default='high_to_low',
                        help='优化顺序')
-    parser.add_argument('--data-path', default='.',
-                       help='HLS测试数据文件的基础路径')
+    parser.add_argument('--data-path', default='/home/ggg_wufuqi/hls/MHGD/MHGD',
+                       help='HLS测试数据文件的基础路径 (例如: /home/ggg_wufuqi/hls/MHGD/MHGD)')
+    parser.add_argument('--gaussian-noise-path', 
+                       default='/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai',
+                       help='高斯噪声文件路径')
     
     args = parser.parse_args()
     
@@ -408,7 +424,8 @@ def main():
         'Nr': args.nr,
         'modulation': args.modulation,
         'SNR': args.snr,
-        'data_path': args.data_path
+        'data_path': args.data_path,
+        'gaussian_noise_path': args.gaussian_noise_path
     }
     
     # 默认输出文件名

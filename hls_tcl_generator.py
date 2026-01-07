@@ -8,6 +8,8 @@ import os
 
 def generate_full_hls_tcl(config_name="bitwidth_opt", 
                           data_base_path=".",
+                          mimo_config_name="8_8_16QAM",
+                          gaussian_noise_path="/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai",
                           project_name="MHGD_xo_out_bitwidth",
                           part="xczu7ev-ffvc1156-2-e",
                           clock_period=10):
@@ -16,7 +18,9 @@ def generate_full_hls_tcl(config_name="bitwidth_opt",
     
     参数:
         config_name: 配置名称
-        data_base_path: 测试数据基础路径
+        data_base_path: 测试数据基础路径 (例如: /home/ggg_wufuqi/hls/MHGD/MHGD)
+        mimo_config_name: MIMO配置名称 (例如: 8_8_16QAM, 表示8x8天线16QAM调制)
+        gaussian_noise_path: 高斯噪声文件路径
         project_name: HLS项目名称
         part: FPGA器件型号
         clock_period: 时钟周期(ns)
@@ -25,9 +29,13 @@ def generate_full_hls_tcl(config_name="bitwidth_opt",
         TCL脚本文件路径
     """
     
+    # 构建完整路径
+    mimo_data_path = f"{data_base_path}/{mimo_config_name}"
+    
     tcl_content = f"""#
 # Bitwidth Optimization HLS TCL Script
 # Auto-generated for configuration: {config_name}
+# MIMO Config: {mimo_config_name}
 #
 
 # Create a project
@@ -41,38 +49,33 @@ add_files MyComplex_1.h
 # Add test bench & files
 add_files -tb main_hw.cpp
 
-# Add test data files
-# Output files (for comparison)
-add_files -tb {data_base_path}/output_file/bits_output_SNR=5.txt -cflags "-I."
-add_files -tb {data_base_path}/output_file/bits_output_SNR=10.txt -cflags "-I."
-add_files -tb {data_base_path}/output_file/bits_output_SNR=15.txt -cflags "-I."
-add_files -tb {data_base_path}/output_file/bits_output_SNR=20.txt -cflags "-I."
-add_files -tb {data_base_path}/output_file/bits_output_SNR=25.txt -cflags "-I."
+# Add test data files for {mimo_config_name}
+# Reference bit files
+add_files -tb {mimo_data_path}/reference_file/bits_SNR=5.txt -cflags "-I."
+add_files -tb {mimo_data_path}/reference_file/bits_SNR=10.txt -cflags "-I."
+add_files -tb {mimo_data_path}/reference_file/bits_SNR=15.txt -cflags "-I."
+add_files -tb {mimo_data_path}/reference_file/bits_SNR=20.txt -cflags "-I."
+add_files -tb {mimo_data_path}/reference_file/bits_SNR=25.txt -cflags "-I."
 
 # Input H matrices
-add_files -tb {data_base_path}/input_file/H_SNR=5.txt -cflags "-I."
-add_files -tb {data_base_path}/input_file/H_SNR=10.txt -cflags "-I."
-add_files -tb {data_base_path}/input_file/H_SNR=15.txt -cflags "-I."
-add_files -tb {data_base_path}/input_file/H_SNR=20.txt -cflags "-I."
-add_files -tb {data_base_path}/input_file/H_SNR=25.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/H_SNR=5.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/H_SNR=10.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/H_SNR=15.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/H_SNR=20.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/H_SNR=25.txt -cflags "-I."
 
 # Input y vectors
-add_files -tb {data_base_path}/input_file/y_SNR=5.txt -cflags "-I."
-add_files -tb {data_base_path}/input_file/y_SNR=10.txt -cflags "-I."
-add_files -tb {data_base_path}/input_file/y_SNR=15.txt -cflags "-I."
-add_files -tb {data_base_path}/input_file/y_SNR=20.txt -cflags "-I."
-add_files -tb {data_base_path}/input_file/y_SNR=25.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/y_SNR=5.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/y_SNR=10.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/y_SNR=15.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/y_SNR=20.txt -cflags "-I."
+add_files -tb {mimo_data_path}/input_file/y_SNR=25.txt -cflags "-I."
 
-# Constellation files
-add_files -tb {data_base_path}/_64QAM_Constellation.txt -cflags "-I."
-add_files -tb {data_base_path}/_16QAM_Constellation.txt -cflags "-I."
-
-# Gaussian noise files
-add_files -tb {data_base_path}/gaussian_random_values.txt -cflags "-I."
-add_files -tb {data_base_path}/gaussian_random_values_plus.txt -cflags "-I."
-add_files -tb {data_base_path}/gaussian_random_values_plus_2.txt -cflags "-I."
-add_files -tb {data_base_path}/gaussian_random_values_plus_3.txt -cflags "-I."
-add_files -tb {data_base_path}/gaussian_random_values_plus_4.txt -cflags "-I."
+# Gaussian noise files (fixed paths)
+add_files -tb {gaussian_noise_path}/gaussian_random_values_plus.txt -cflags "-I."
+add_files -tb {gaussian_noise_path}/gaussian_random_values_plus_2.txt -cflags "-I."
+add_files -tb {gaussian_noise_path}/gaussian_random_values_plus_3.txt -cflags "-I."
+add_files -tb {gaussian_noise_path}/gaussian_random_values_plus_4.txt -cflags "-I."
 
 # Set the top-level function
 set_top MHGD_detect_accel_hw

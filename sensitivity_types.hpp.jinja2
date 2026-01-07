@@ -1,0 +1,8 @@
+// 灵敏度分析专用类型定义 - 自动生成
+#pragma once
+#include <ap_fixed.h>
+
+{% for var_name, config in vars.items() %}
+// 变量: {{ var_name }}
+typedef ap_fixed<{{config.init_W}}, {{config.init_I}}> {{var_name}}_t;
+{% endfor %}

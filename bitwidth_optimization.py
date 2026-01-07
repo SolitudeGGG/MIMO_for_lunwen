@@ -2,6 +2,7 @@
 """
 固定点位宽自动优化脚本
 基于BER性能逐步削减变量位宽，找到最优位宽配置
+使用Vitis HLS进行Csim测试
 """
 
 import re
@@ -11,6 +12,33 @@ import subprocess
 import json
 from pathlib import Path
 from jinja2 import Template
+
+# 导入HLS TCL生成器
+try:
+    from hls_tcl_generator import generate_full_hls_tcl
+except ImportError:
+    # 如果无法导入，提供内联版本
+    def generate_full_hls_tcl(config_name, data_base_path=".", **kwargs):
+        """简化的TCL生成器"""
+        tcl_content = f"""
+open_project -reset bitwidth_opt_{config_name}
+add_files MHGD_accel_hw.cpp
+add_files MHGD_accel_hw.h
+add_files MyComplex_1.h
+add_files -tb main_hw.cpp
+set_top MHGD_detect_accel_hw
+open_solution -reset "solution1"
+set_part {{xczu7ev-ffvc1156-2-e}}
+create_clock -period 10
+config_interface -m_axi_max_widen_bitwidth 512
+config_interface -m_axi_alignment_byte_size 64
+csim_design -ldflags "-lm"
+exit
+"""
+        tcl_file = f"run_hls_{config_name}.tcl"
+        with open(tcl_file, 'w') as f:
+            f.write(tcl_content)
+        return tcl_file
 
 class BitwidthOptimizer:
     def __init__(self, header_file, template_file, reference_ber_threshold=1e-4):
@@ -68,14 +96,32 @@ class BitwidthOptimizer:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(rendered)
     
-    def compile_and_test(self, config_name, var_configs, mimo_config):
+    def generate_hls_tcl_script(self, config_name, snr, data_base_path="."):
         """
-        编译HLS项目并运行测试
+        生成HLS TCL脚本用于Csim
+        
+        参数:
+            config_name: 配置名称
+            snr: 信噪比
+            data_base_path: 测试数据基础路径
+        """
+        # 使用更完整的TCL生成器
+        tcl_file = generate_full_hls_tcl(
+            config_name=config_name,
+            data_base_path=data_base_path
+        )
+        
+        return tcl_file
+    
+    def compile_and_test(self, config_name, var_configs, mimo_config, data_base_path="."):
+        """
+        使用Vitis HLS编译并运行Csim测试
         
         参数:
             config_name: 配置名称
             var_configs: 变量位宽配置
             mimo_config: MIMO测试配置 (Nt, Nr, modulation, SNR)
+            data_base_path: 测试数据文件的基础路径
         
         返回:
             BER值，如果编译或测试失败返回None
@@ -87,57 +133,80 @@ class BitwidthOptimizer:
         self.generate_header_from_template(temp_header, var_configs)
         
         # 备份原始头文件
-        os.rename("MyComplex_1.h", "MyComplex_1.h.bak")
+        if os.path.exists("MyComplex_1.h"):
+            os.rename("MyComplex_1.h", "MyComplex_1.h.bak")
         os.rename(temp_header, "MyComplex_1.h")
         
+        # 生成HLS TCL脚本
+        snr = mimo_config.get('SNR', 20)
+        tcl_file = self.generate_hls_tcl_script(config_name, snr, data_base_path)
+        
         try:
-            # 编译 (假设使用vitis_hls或者简单的g++编译testbench)
-            # 这里需要根据实际的编译流程调整
-            compile_cmd = ["g++", "-std=c++11", "-I.", "-o", "test_mimo", 
-                          "main_hw.cpp", "MHGD_accel_hw.cpp",
-                          "-lm"]
+            # 运行Vitis HLS
+            print(f"    运行Vitis HLS Csim...")
+            hls_cmd = ["vitis_hls", "-f", tcl_file]
             
-            result = subprocess.run(compile_cmd, capture_output=True, text=True, timeout=120)
+            # 运行HLS，输出到日志文件
+            log_file = f"build_{config_name}.log"
             
-            if result.returncode != 0:
-                print(f"    编译失败: {result.stderr[:200]}")
-                return None
+            with open(log_file, 'w') as log:
+                result = subprocess.run(
+                    hls_cmd, 
+                    stdout=log, 
+                    stderr=subprocess.STDOUT, 
+                    text=True, 
+                    timeout=600  # 10分钟超时
+                )
             
-            # 运行测试
-            test_cmd = ["./test_mimo"]
-            result = subprocess.run(test_cmd, capture_output=True, text=True, timeout=300)
+            # 读取日志文件查找BER
+            with open(log_file, 'r') as log:
+                log_content = log.read()
             
-            if result.returncode != 0:
-                print(f"    运行失败: {result.stderr[:200]}")
-                return None
-            
-            # 从输出中提取BER
-            output = result.stdout
-            ber_match = re.search(r'FINAL_BER:\s*([\d.e+-]+)', output)
+            # 从日志中提取BER
+            # 首先尝试查找FINAL_BER标记
+            ber_match = re.search(r'FINAL_BER:\s*([\d.e+-]+)', log_content)
             
             if ber_match:
                 ber = float(ber_match.group(1))
                 print(f"    BER = {ber:.8f}")
                 return ber
             else:
-                print(f"    无法提取BER")
+                # 尝试其他可能的BER输出格式
+                ber_match = re.search(r'BER\s*[=:]\s*([\d.e+-]+)', log_content, re.IGNORECASE)
+                if ber_match:
+                    ber = float(ber_match.group(1))
+                    print(f"    BER = {ber:.8f}")
+                    return ber
+                
+                print(f"    无法从日志中提取BER")
+                print(f"    日志文件: {log_file}")
                 return None
                 
         except subprocess.TimeoutExpired:
-            print(f"    执行超时")
+            print(f"    HLS执行超时")
+            return None
+        except FileNotFoundError:
+            print(f"    错误: 找不到vitis_hls命令")
+            print(f"    请确保Vitis HLS已安装并在PATH中")
             return None
         except Exception as e:
             print(f"    发生错误: {e}")
             return None
         finally:
             # 恢复原始头文件
-            os.rename("MyComplex_1.h", temp_header)
-            os.rename("MyComplex_1.h.bak", "MyComplex_1.h")
+            if os.path.exists("MyComplex_1.h"):
+                os.rename("MyComplex_1.h", temp_header)
+            if os.path.exists("MyComplex_1.h.bak"):
+                os.rename("MyComplex_1.h.bak", "MyComplex_1.h")
+            
             # 清理临时文件
             if os.path.exists(temp_header):
                 os.remove(temp_header)
-            if os.path.exists("test_mimo"):
-                os.remove("test_mimo")
+            if os.path.exists(tcl_file):
+                os.remove(tcl_file)
+            
+            # 保留日志文件供调试，但可选择性清理HLS生成的项目文件
+            # 注意：bitwidth_opt_project文件夹会被HLS创建
     
     def get_baseline_ber(self, mimo_config):
         """获取64位全精度基准BER"""
@@ -146,7 +215,8 @@ class BitwidthOptimizer:
         # 使用当前(全精度)配置
         baseline_config = {var: self.variables[var] for var in self.variables}
         
-        ber = self.compile_and_test("baseline", baseline_config, mimo_config)
+        data_path = mimo_config.get('data_path', '.')
+        ber = self.compile_and_test("baseline", baseline_config, mimo_config, data_path)
         
         if ber is None:
             raise RuntimeError("无法获取基准BER")
@@ -177,6 +247,8 @@ class BitwidthOptimizer:
         best_W = current_W
         best_I = current_I
         
+        data_path = mimo_config.get('data_path', '.')
+        
         # 从当前位宽开始，逐步减小
         for test_W in range(current_W, min_W - 1, -step):
             # 构建测试配置
@@ -184,7 +256,7 @@ class BitwidthOptimizer:
             test_config[var_name]['current_W'] = test_W
             
             # 测试此配置
-            ber = self.compile_and_test(f"{var_name}_W{test_W}", test_config, mimo_config)
+            ber = self.compile_and_test(f"{var_name}_W{test_W}", test_config, mimo_config, data_path)
             
             if ber is None:
                 # 编译或运行失败，停止优化此变量
@@ -325,6 +397,8 @@ def main():
     parser.add_argument('--order', choices=['sequential', 'high_to_low', 'low_to_high'],
                        default='high_to_low',
                        help='优化顺序')
+    parser.add_argument('--data-path', default='.',
+                       help='HLS测试数据文件的基础路径')
     
     args = parser.parse_args()
     
@@ -333,7 +407,8 @@ def main():
         'Nt': args.nt,
         'Nr': args.nr,
         'modulation': args.modulation,
-        'SNR': args.snr
+        'SNR': args.snr,
+        'data_path': args.data_path
     }
     
     # 默认输出文件名

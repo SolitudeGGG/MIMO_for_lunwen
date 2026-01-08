@@ -449,12 +449,20 @@ def main():
         'gaussian_noise_path': args.gaussian_noise_path
     }
     
-    # 默认输出文件名
+    # 默认输出文件名 - 保存到bitwidth_result文件夹
     if args.output_config is None:
-        args.output_config = f"bitwidth_config_{args.nt}x{args.nr}_{args.modulation}QAM_SNR{args.snr}.json"
+        # 创建bitwidth_result文件夹
+        import os
+        output_dir = os.path.join(os.path.dirname(args.header) if os.path.dirname(args.header) else '.', 'bitwidth_result')
+        os.makedirs(output_dir, exist_ok=True)
+        args.output_config = os.path.join(output_dir, f"bitwidth_config_{args.nt}x{args.nr}_{args.modulation}QAM_SNR{args.snr}.json")
     
     if args.output_header is None:
-        args.output_header = f"MyComplex_optimized_{args.nt}x{args.nr}_{args.modulation}QAM_SNR{args.snr}.h"
+        # 创建bitwidth_result文件夹（如果还没创建）
+        import os
+        output_dir = os.path.join(os.path.dirname(args.header) if os.path.dirname(args.header) else '.', 'bitwidth_result')
+        os.makedirs(output_dir, exist_ok=True)
+        args.output_header = os.path.join(output_dir, f"MyComplex_optimized_{args.nt}x{args.nr}_{args.modulation}QAM_SNR{args.snr}.h")
     
     # 创建优化器
     optimizer = BitwidthOptimizer(args.header, args.template, args.ber_threshold)

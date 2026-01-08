@@ -80,9 +80,13 @@ class BatchBitwidthOptimizer:
         output_config = output_dir / f"bitwidth_config_{mimo_config['name']}_SNR{mimo_config['snr']}.json"
         output_header = output_dir / f"MyComplex_optimized_{mimo_config['name']}_SNR{mimo_config['snr']}.h"
         
-        # 构建命令
+        # 构建命令 - 使用绝对路径确保脚本能被找到
+        import os
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        script_path = os.path.join(script_dir, 'bitwidth_optimization.py')
+        
         cmd = [
-            'python3', 'bitwidth_optimization.py',
+            'python3', script_path,
             '--header', self.config['header_file'],
             '--template', self.config['template_file'],
             '--ber-threshold', str(self.config['ber_threshold']),

@@ -94,11 +94,15 @@ class BatchBitwidthOptimizer:
             '--gaussian-noise-path', self.config['gaussian_noise_path'],
             '--output-config', str(output_config),
             '--output-header', str(output_header),
-            '--order', self.config['optimization_order']
+            '--order', self.config['optimization_order'],
+            '--initial-W', str(self.config.get('initial_W', 40)),
+            '--initial-I', str(self.config.get('initial_I', 8))
         ]
         
         print(f"\n执行命令:")
-        print(f"  {' '.join(cmd)}")
+        # 使用shlex.quote来正确显示带空格的参数
+        import shlex
+        print(f"  {' '.join(shlex.quote(arg) for arg in cmd)}")
         print()
         
         # 记录开始时间
@@ -297,6 +301,10 @@ def main():
     parser.add_argument('--order', dest='optimization_order', default='high_to_low',
                         choices=['sequential', 'high_to_low', 'low_to_high'],
                         help='优化顺序 (默认: high_to_low)')
+    parser.add_argument('--initial-W', type=int, default=40,
+                        help='初始总位宽 (默认: 40, 即整数8位+小数32位)')
+    parser.add_argument('--initial-I', type=int, default=8,
+                        help='初始整数位宽 (默认: 8)')
     
     args = parser.parse_args()
     
@@ -308,7 +316,9 @@ def main():
         'data_path': args.data_path,
         'gaussian_noise_path': args.gaussian_noise_path,
         'ber_threshold': args.ber_threshold,
-        'optimization_order': args.optimization_order
+        'optimization_order': args.optimization_order,
+        'initial_W': args.initial_W,
+        'initial_I': args.initial_I
     }
     
     # 验证文件存在

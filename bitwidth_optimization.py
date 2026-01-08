@@ -108,7 +108,8 @@ class BitwidthOptimizer:
             template_content = f.read()
         
         template = Template(template_content)
-        rendered = template.render(vars=var_configs)
+        # 支持两种模板格式：使用 'vars' 或 'main_vars'
+        rendered = template.render(vars=var_configs, main_vars=var_configs)
         
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(rendered)

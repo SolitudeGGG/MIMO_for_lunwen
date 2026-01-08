@@ -41,6 +41,9 @@ bitwidth_opt_*/
 run_hls_*.tcl
 build_*.log
 
+# Log files directory (organized logs)
+logfiles/
+
 # OS
 .DS_Store
 Thumbs.db

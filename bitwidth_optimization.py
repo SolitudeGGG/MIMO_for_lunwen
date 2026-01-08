@@ -41,7 +41,11 @@ config_interface -m_axi_alignment_byte_size 64
 csim_design -ldflags "-lm"
 exit
 """
-        tcl_file = f"run_hls_{config_name}.tcl"
+        # 保存TCL文件到logfiles目录
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        logfiles_dir = os.path.join(script_dir, 'logfiles')
+        os.makedirs(logfiles_dir, exist_ok=True)
+        tcl_file = os.path.join(logfiles_dir, f"run_hls_{config_name}.tcl")
         with open(tcl_file, 'w') as f:
             f.write(tcl_content)
         return tcl_file
@@ -181,8 +185,11 @@ class BitwidthOptimizer:
             print(f"    运行Vitis HLS Csim...")
             hls_cmd = ["vitis_hls", "-f", tcl_file]
             
-            # 运行HLS，输出到日志文件
-            log_file = f"build_{config_name}.log"
+            # 保存日志文件到logfiles目录
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            logfiles_dir = os.path.join(script_dir, 'logfiles')
+            os.makedirs(logfiles_dir, exist_ok=True)
+            log_file = os.path.join(logfiles_dir, f"build_{config_name}.log")
             
             with open(log_file, 'w') as log:
                 result = subprocess.run(
@@ -237,11 +244,9 @@ class BitwidthOptimizer:
             # 清理临时文件
             if os.path.exists(temp_header):
                 os.remove(temp_header)
-            if os.path.exists(tcl_file):
-                os.remove(tcl_file)
             
-            # 保留日志文件供调试，但可选择性清理HLS生成的项目文件
-            # 注意：bitwidth_opt_project文件夹会被HLS创建
+            # 日志和TCL文件已保存在logfiles目录中，不需要清理
+            # HLS项目文件夹会被HLS创建，可在需要时手动清理
     
     def get_baseline_ber(self, mimo_config):
         """获取64位全精度基准BER"""
@@ -415,6 +420,10 @@ def main():
     # 获取脚本所在目录（PYTHON_COPILOT/）
     script_dir = os.path.dirname(os.path.abspath(__file__))
     source_dir = os.path.dirname(script_dir)  # 上一级目录（mimo_cpp_gai/）
+    
+    # 创建logfiles目录用于存放所有日志和TCL文件
+    logfiles_dir = os.path.join(script_dir, 'logfiles')
+    os.makedirs(logfiles_dir, exist_ok=True)
     
     parser = argparse.ArgumentParser(description='MIMO HLS位宽自动优化工具')
     parser.add_argument('--header', 

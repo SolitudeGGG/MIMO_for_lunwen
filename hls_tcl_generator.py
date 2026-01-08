@@ -101,7 +101,11 @@ csim_design -ldflags "-lm"
 exit
 """
     
-    tcl_file = f"run_hls_{config_name}.tcl"
+    # 保存TCL文件到logfiles目录
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    logfiles_dir = os.path.join(script_dir, 'logfiles')
+    os.makedirs(logfiles_dir, exist_ok=True)
+    tcl_file = os.path.join(logfiles_dir, f"run_hls_{config_name}.tcl")
     with open(tcl_file, 'w', encoding='utf-8') as f:
         f.write(tcl_content)
     
@@ -201,7 +205,11 @@ if {{$hls_exec == 1}} {{
 exit
 """
     
-    tcl_file = f"run_hls_full_{config_name}.tcl"
+    # 保存TCL文件到logfiles目录
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    logfiles_dir = os.path.join(script_dir, 'logfiles')
+    os.makedirs(logfiles_dir, exist_ok=True)
+    tcl_file = os.path.join(logfiles_dir, f"run_hls_full_{config_name}.tcl")
     with open(tcl_file, 'w', encoding='utf-8') as f:
         f.write(tcl_content)
     

@@ -18,8 +18,14 @@ try:
     from hls_tcl_generator import generate_full_hls_tcl
 except ImportError:
     # 如果无法导入，提供内联版本
-    def generate_full_hls_tcl(config_name, data_base_path=".", **kwargs):
-        """简化的TCL生成器"""
+    def generate_full_hls_tcl(config_name="bitwidth_opt", 
+                              data_base_path=".",
+                              mimo_config_name="8_8_16QAM",
+                              gaussian_noise_path="/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai",
+                              project_name="MHGD_xo_out_bitwidth",
+                              part="xczu7ev-ffvc1156-2-e",
+                              clock_period=10):
+        """简化的TCL生成器 - 与hls_tcl_generator.py保持兼容的签名"""
         tcl_content = f"""
 open_project -reset bitwidth_opt_{config_name}
 add_files MHGD_accel_hw.cpp
@@ -28,8 +34,8 @@ add_files MyComplex_1.h
 add_files -tb main_hw.cpp
 set_top MHGD_detect_accel_hw
 open_solution -reset "solution1"
-set_part {{xczu7ev-ffvc1156-2-e}}
-create_clock -period 10
+set_part {{{part}}}
+create_clock -period {clock_period}
 config_interface -m_axi_max_widen_bitwidth 512
 config_interface -m_axi_alignment_byte_size 64
 csim_design -ldflags "-lm"

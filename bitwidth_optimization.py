@@ -458,16 +458,12 @@ def main():
     # 默认输出文件名 - 保存到PYTHON_COPILOT/bitwidth_result文件夹
     if args.output_config is None:
         # 创建bitwidth_result文件夹在脚本所在目录
-        import os
-        script_dir = os.path.dirname(os.path.abspath(__file__))
         output_dir = os.path.join(script_dir, 'bitwidth_result')
         os.makedirs(output_dir, exist_ok=True)
         args.output_config = os.path.join(output_dir, f"bitwidth_config_{args.nt}x{args.nr}_{args.modulation}QAM_SNR{args.snr}.json")
     
     if args.output_header is None:
         # 创建bitwidth_result文件夹（如果还没创建）
-        import os
-        script_dir = os.path.dirname(os.path.abspath(__file__))
         output_dir = os.path.join(script_dir, 'bitwidth_result')
         os.makedirs(output_dir, exist_ok=True)
         args.output_header = os.path.join(output_dir, f"MyComplex_optimized_{args.nt}x{args.nr}_{args.modulation}QAM_SNR{args.snr}.h")

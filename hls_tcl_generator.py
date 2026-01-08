@@ -32,6 +32,11 @@ def generate_full_hls_tcl(config_name="bitwidth_opt",
     # 构建完整路径
     mimo_data_path = f"{data_base_path}/{mimo_config_name}"
     
+    # 获取脚本所在目录，并找到HLS源文件
+    # 脚本在PYTHON_COPILOT/目录下，源文件在其父目录
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    source_dir = os.path.dirname(script_dir)  # 上一级目录
+    
     tcl_content = f"""#
 # Bitwidth Optimization HLS TCL Script
 # Auto-generated for configuration: {config_name}
@@ -41,13 +46,13 @@ def generate_full_hls_tcl(config_name="bitwidth_opt",
 # Create a project
 open_project -reset {project_name}
 
-# Add design files
-add_files MHGD_accel_hw.cpp
-add_files MHGD_accel_hw.h
-add_files MyComplex_1.h
+# Add design files (using absolute paths)
+add_files {source_dir}/MHGD_accel_hw.cpp
+add_files {source_dir}/MHGD_accel_hw.h
+add_files {source_dir}/MyComplex_1.h
 
 # Add test bench & files
-add_files -tb main_hw.cpp
+add_files -tb {source_dir}/main_hw.cpp
 
 # Add test data files for {mimo_config_name}
 # Reference bit files

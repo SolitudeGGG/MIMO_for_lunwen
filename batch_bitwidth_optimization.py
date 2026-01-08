@@ -270,14 +270,22 @@ class BatchBitwidthOptimizer:
 
 
 def main():
+    # 获取脚本所在目录（PYTHON_COPILOT/）
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    source_dir = os.path.dirname(script_dir)  # 上一级目录（mimo_cpp_gai/）
+    
     parser = argparse.ArgumentParser(
         description='批量MIMO位宽优化脚本',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
+  # 使用默认路径（推荐，从PYTHON_COPILOT目录运行）
+  python3 batch_bitwidth_optimization.py
+  
+  # 或指定完整路径
   python3 batch_bitwidth_optimization.py \\
       --header /home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai/MyComplex_1.h \\
-      --template /home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai/templates/sensitivity_types.hpp.jinja2 \\
+      --template /home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai/PYTHON_COPILOT/sensitivity_types.hpp.jinja2 \\
       --output-dir /home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai/PYTHON_COPILOT/bitwidth_result
 
 支持的MIMO配置:
@@ -289,12 +297,15 @@ def main():
         """
     )
     
-    parser.add_argument('--header', required=True,
-                        help='MyComplex_1.h头文件路径')
-    parser.add_argument('--template', required=True,
-                        help='jinja2模板文件路径')
-    parser.add_argument('--output-dir', required=True,
-                        help='输出目录（所有优化结果将保存在此）')
+    parser.add_argument('--header', 
+                        default=os.path.join(source_dir, 'MyComplex_1.h'),
+                        help='MyComplex_1.h头文件路径 (默认: ../MyComplex_1.h)')
+    parser.add_argument('--template', 
+                        default=os.path.join(script_dir, 'sensitivity_types.hpp.jinja2'),
+                        help='jinja2模板文件路径 (默认: ./sensitivity_types.hpp.jinja2)')
+    parser.add_argument('--output-dir', 
+                        default=os.path.join(script_dir, 'bitwidth_result'),
+                        help='输出目录 (默认: ./bitwidth_result/)')
     parser.add_argument('--data-path', default='/home/ggg_wufuqi/hls/MHGD/MHGD',
                         help='HLS测试数据基础路径 (默认: /home/ggg_wufuqi/hls/MHGD/MHGD)')
     parser.add_argument('--gaussian-noise-path',

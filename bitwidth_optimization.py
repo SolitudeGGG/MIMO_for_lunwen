@@ -405,11 +405,17 @@ def main():
     """主函数"""
     import argparse
     
+    # 获取脚本所在目录（PYTHON_COPILOT/）
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    source_dir = os.path.dirname(script_dir)  # 上一级目录（mimo_cpp_gai/）
+    
     parser = argparse.ArgumentParser(description='MIMO HLS位宽自动优化工具')
-    parser.add_argument('--header', default='MyComplex_1.h', 
-                       help='输入头文件路径')
-    parser.add_argument('--template', default='sensitivity_types.hpp.jinja2',
-                       help='Jinja2模板文件路径')
+    parser.add_argument('--header', 
+                       default=os.path.join(source_dir, 'MyComplex_1.h'), 
+                       help='输入头文件路径 (默认: ../MyComplex_1.h)')
+    parser.add_argument('--template', 
+                       default=os.path.join(script_dir, 'sensitivity_types.hpp.jinja2'),
+                       help='Jinja2模板文件路径 (默认: ./sensitivity_types.hpp.jinja2)')
     parser.add_argument('--ber-threshold', type=float, default=1e-4,
                        help='BER差异阈值')
     parser.add_argument('--nt', type=int, default=8,
@@ -449,18 +455,20 @@ def main():
         'gaussian_noise_path': args.gaussian_noise_path
     }
     
-    # 默认输出文件名 - 保存到bitwidth_result文件夹
+    # 默认输出文件名 - 保存到PYTHON_COPILOT/bitwidth_result文件夹
     if args.output_config is None:
-        # 创建bitwidth_result文件夹
+        # 创建bitwidth_result文件夹在脚本所在目录
         import os
-        output_dir = os.path.join(os.path.dirname(args.header) if os.path.dirname(args.header) else '.', 'bitwidth_result')
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(script_dir, 'bitwidth_result')
         os.makedirs(output_dir, exist_ok=True)
         args.output_config = os.path.join(output_dir, f"bitwidth_config_{args.nt}x{args.nr}_{args.modulation}QAM_SNR{args.snr}.json")
     
     if args.output_header is None:
         # 创建bitwidth_result文件夹（如果还没创建）
         import os
-        output_dir = os.path.join(os.path.dirname(args.header) if os.path.dirname(args.header) else '.', 'bitwidth_result')
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(script_dir, 'bitwidth_result')
         os.makedirs(output_dir, exist_ok=True)
         args.output_header = os.path.join(output_dir, f"MyComplex_optimized_{args.nt}x{args.nr}_{args.modulation}QAM_SNR{args.snr}.h")
     

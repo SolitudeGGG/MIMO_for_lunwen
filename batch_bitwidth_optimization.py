@@ -114,11 +114,9 @@ class BatchBitwidthOptimizer:
         
         try:
             # 执行优化脚本 - 无超时限制以支持大规模MIMO配置
+            # 不捕获输出，让子进程直接输出到终端以提供实时进度可见性
             result = subprocess.run(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
                 timeout=None  # 不设置超时限制
             )
             
@@ -159,11 +157,10 @@ class BatchBitwidthOptimizer:
             else:
                 print(f"\n✗ 配置 {mimo_config['name']} 优化失败!")
                 print(f"  返回码: {result.returncode}")
-                print(f"  输出:")
-                print(result.stdout)
+                print(f"  请查看上方输出或logfiles/目录中的日志文件以获取详细错误信息")
                 return False, {
                     'mimo_config': mimo_config,
-                    'error': result.stdout,
+                    'error': f'优化失败，返回码: {result.returncode}',
                     'returncode': result.returncode
                 }
                 

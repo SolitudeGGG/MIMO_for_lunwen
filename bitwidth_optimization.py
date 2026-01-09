@@ -278,12 +278,18 @@ class BitwidthOptimizer:
         返回:
             优化后的位宽配置
         """
-        print(f"\n优化变量: {var_name}")
+        print(f"\n{'='*70}")
+        print(f"正在优化变量: {var_name}")
         var_config = self.variables[var_name]
         
         current_W = var_config['current_W']
         current_I = var_config['current_I']
         min_W = var_config['min_W']
+        
+        print(f"  初始位宽: W={current_W}, I={current_I}")
+        print(f"  最小位宽: W={min_W}")
+        print(f"  优化步长: {step} bits")
+        print(f"{'='*70}")
         
         best_W = current_W
         best_I = current_I
@@ -292,7 +298,11 @@ class BitwidthOptimizer:
         gaussian_noise_path = mimo_config.get('gaussian_noise_path', '/home/ggg_wufuqi/hls/MIMO_detect-main/mimo_cpp_gai')
         
         # 从当前位宽开始，逐步减小
+        test_count = 0
         for test_W in range(current_W, min_W - 1, -step):
+            test_count += 1
+            print(f"\n  [{test_count}] 测试位宽 W={test_W}...", flush=True)
+            
             # 构建测试配置
             test_config = {var: self.variables[var].copy() for var in self.variables}
             test_config[var_name]['current_W'] = test_W
@@ -302,7 +312,7 @@ class BitwidthOptimizer:
             
             if ber is None:
                 # 编译或运行失败，停止优化此变量
-                print(f"  W={test_W} 失败，使用W={best_W}")
+                print(f"  ✗ W={test_W} 测试失败，使用上一个有效配置 W={best_W}")
                 break
             
             # 检查BER是否在可接受范围内
@@ -311,17 +321,22 @@ class BitwidthOptimizer:
             if ber_diff <= self.reference_ber_threshold or ber <= self.baseline_ber * 1.1:
                 # BER可接受，继续减小位宽
                 best_W = test_W
-                print(f"  W={test_W} 通过 (BER={ber:.8f}, diff={ber_diff:.8f})")
+                print(f"  ✓ W={test_W} 通过 (BER={ber:.8f}, 与基准差异={ber_diff:.8f})")
             else:
                 # BER超出阈值，停止
-                print(f"  W={test_W} BER过高 (BER={ber:.8f}, diff={ber_diff:.8f})")
+                print(f"  ✗ W={test_W} BER超出阈值 (BER={ber:.8f}, 与基准差异={ber_diff:.8f})")
+                print(f"  停止优化，使用 W={best_W}")
                 break
         
         # 更新变量配置
         self.variables[var_name]['current_W'] = best_W
         self.variables[var_name]['optimized'] = True
         
-        print(f"  最优位宽: W={best_W}, I={best_I}")
+        reduction = current_W - best_W
+        print(f"\n  优化完成:")
+        print(f"    最优位宽: W={best_W}, I={best_I}")
+        print(f"    位宽减少: {reduction} bits ({reduction/current_W*100:.1f}%)")
+        print(f"{'='*70}")
         
         return best_W, best_I
     
@@ -333,9 +348,9 @@ class BitwidthOptimizer:
             mimo_config: MIMO配置
             optimization_order: 优化顺序 ('sequential', 'high_to_low', 'low_to_high')
         """
-        print("\n" + "=" * 60)
-        print("开始位宽优化")
-        print("=" * 60)
+        print("\n" + "=" * 80)
+        print(" " * 25 + "开始位宽优化")
+        print("=" * 80)
         
         # 获取基准BER
         self.get_baseline_ber(mimo_config)
@@ -346,25 +361,76 @@ class BitwidthOptimizer:
             var_list = sorted(self.variables.keys(), 
                             key=lambda v: self.variables[v]['init_W'], 
                             reverse=True)
+            order_desc = "从大到小(高位宽优先)"
         elif optimization_order == 'low_to_high':
             # 按初始位宽从小到大排序
             var_list = sorted(self.variables.keys(), 
                             key=lambda v: self.variables[v]['init_W'])
+            order_desc = "从小到大(低位宽优先)"
         else:
             # 顺序优化
             var_list = list(self.variables.keys())
+            order_desc = "顺序优化"
         
-        print(f"\n优化顺序: {optimization_order}")
-        print(f"变量数量: {len(var_list)}")
+        print(f"\n优化配置:")
+        print(f"  优化顺序: {order_desc}")
+        print(f"  变量总数: {len(var_list)}")
+        print(f"  BER阈值: {self.reference_ber_threshold}")
+        print(f"  基准BER: {self.baseline_ber:.8f}")
         
         # 逐个优化变量
-        for idx, var_name in enumerate(var_list, 1):
-            print(f"\n[{idx}/{len(var_list)}]", end=" ")
-            self.optimize_single_variable(var_name, mimo_config, step=2)
+        import time
+        start_time = time.time()
         
-        print("\n" + "=" * 60)
-        print("位宽优化完成")
-        print("=" * 60)
+        for idx, var_name in enumerate(var_list, 1):
+            print(f"\n" + "█" * 80)
+            print(f" 进度: [{idx}/{len(var_list)}] ({idx/len(var_list)*100:.1f}%)")
+            print(f"█" * 80)
+            self.optimize_single_variable(var_name, mimo_config, step=2)
+            
+            # 显示已用时间和预估剩余时间
+            elapsed = time.time() - start_time
+            avg_time_per_var = elapsed / idx
+            remaining_vars = len(var_list) - idx
+            estimated_remaining = avg_time_per_var * remaining_vars
+            
+            if idx < len(var_list):
+                print(f"\n⏱  已用时间: {elapsed/60:.1f}分钟")
+                print(f"⏱  预计剩余: {estimated_remaining/60:.1f}分钟")
+                print(f"⏱  预计总用时: {(elapsed + estimated_remaining)/60:.1f}分钟")
+        
+        total_time = time.time() - start_time
+        
+        print("\n" + "=" * 80)
+        print(" " * 25 + "位宽优化完成")
+        print("=" * 80)
+        print(f"\n总用时: {total_time/60:.1f}分钟 ({total_time/3600:.2f}小时)")
+        
+        # 输出所有变量的最优位宽结果
+        print("\n" + "="*80)
+        print(" " * 20 + "所有变量最优位宽汇总")
+        print("="*80)
+        print(f"\n{'变量名':<35} {'原始(W,I)':<15} {'优化后(W,I)':<15} {'减少':<10}")
+        print("-" * 80)
+        
+        total_reduction = 0
+        for var_name in sorted(self.variables.keys()):
+            config = self.variables[var_name]
+            init_W = config['init_W']
+            init_I = config['init_I']
+            curr_W = config['current_W']
+            curr_I = config['current_I']
+            reduction = init_W - curr_W
+            total_reduction += reduction
+            
+            status = "✓" if config.get('optimized', False) else " "
+            print(f"{status} {var_name:<33} ({init_W},{init_I}){'':<10} ({curr_W},{curr_I}){'':<10} {reduction} bits")
+        
+        print("-" * 80)
+        print(f"总位宽减少: {total_reduction} bits")
+        avg_reduction = total_reduction / len(self.variables) if self.variables else 0
+        print(f"平均减少: {avg_reduction:.1f} bits/变量 ({avg_reduction/40*100:.1f}%)")
+        print("="*80)
     
     def save_optimized_config(self, output_file, mimo_config):
         """保存优化后的配置到JSON文件"""

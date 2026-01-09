@@ -113,13 +113,13 @@ class BatchBitwidthOptimizer:
         start_time = datetime.now()
         
         try:
-            # 执行优化脚本
+            # 执行优化脚本 - 无超时限制以支持大规模MIMO配置
             result = subprocess.run(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                timeout=7200  # 2小时超时
+                timeout=None  # 不设置超时限制
             )
             
             # 计算运行时间
@@ -168,10 +168,11 @@ class BatchBitwidthOptimizer:
                 }
                 
         except subprocess.TimeoutExpired:
+            # 此异常不应再出现，因为已移除超时限制
             print(f"\n✗ 配置 {mimo_config['name']} 超时!")
             return False, {
                 'mimo_config': mimo_config,
-                'error': 'Timeout after 2 hours'
+                'error': 'Unexpected timeout'
             }
         except Exception as e:
             print(f"\n✗ 配置 {mimo_config['name']} 发生错误: {e}")

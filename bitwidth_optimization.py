@@ -266,6 +266,37 @@ class BitwidthOptimizer:
         print(f"基准BER: {ber:.8f}")
         return ber
     
+    def cleanup_variable_logs(self, var_name):
+        """
+        清理单个变量优化过程中产生的所有TCL和LOG文件
+        
+        参数:
+            var_name: 变量名
+        """
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        logfiles_dir = os.path.join(script_dir, 'logfiles')
+        
+        if not os.path.exists(logfiles_dir):
+            return
+        
+        # 查找所有包含变量名的TCL和LOG文件
+        import glob
+        tcl_pattern = os.path.join(logfiles_dir, f"run_hls_{var_name}_*.tcl")
+        log_pattern = os.path.join(logfiles_dir, f"build_{var_name}_*.log")
+        
+        deleted_count = 0
+        for pattern in [tcl_pattern, log_pattern]:
+            files = glob.glob(pattern)
+            for file_path in files:
+                try:
+                    os.remove(file_path)
+                    deleted_count += 1
+                except Exception as e:
+                    print(f"  警告: 无法删除文件 {file_path}: {e}")
+        
+        if deleted_count > 0:
+            print(f"  清理完成: 删除了{deleted_count}个日志文件")
+    
     def optimize_single_variable(self, var_name, mimo_config, step=1):
         """
         优化单个变量的位宽
@@ -337,6 +368,9 @@ class BitwidthOptimizer:
         print(f"    最优位宽: W={best_W}, I={best_I}")
         print(f"    位宽减少: {reduction} bits ({reduction/current_W*100:.1f}%)")
         print(f"{'='*70}")
+        
+        # 清理此变量优化过程中产生的TCL和LOG文件
+        self.cleanup_variable_logs(var_name)
         
         return best_W, best_I
     

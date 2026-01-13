@@ -398,11 +398,11 @@ class OptimizedBitwidthOptimizer:
                 print(f"    ✓ 通过")
                 optimal_W = test_W
                 current_W = test_W
+                # 检查是否已达到最小位宽
+                if test_W == current_I + 2:
+                    break
             else:
                 print(f"    ✗ BER超出阈值，停止跳跃搜索")
-                break
-            
-            if test_W == current_I + 2:
                 break
         
         # 阶段2: 如果跳跃搜索失败，从上一个成功值开始逐bit精细搜索
@@ -412,8 +412,6 @@ class OptimizedBitwidthOptimizer:
             
             while current_W > current_I + 2:
                 test_W = current_W - 1
-                if test_W < current_I + 2:
-                    break
                 
                 test_count += 1
                 config_name = f"{var_name}_W{test_W}_fine"
@@ -508,11 +506,11 @@ class OptimizedBitwidthOptimizer:
                 print(f"    ✓ 通过")
                 optimal_I = test_I
                 current_I = test_I
+                # 检查是否已达到最小整数位宽
+                if test_I == 4:
+                    break
             else:
                 print(f"    ✗ BER超出阈值，停止优化")
-                break
-            
-            if test_I == 4:
                 break
         
         # 更新变量配置

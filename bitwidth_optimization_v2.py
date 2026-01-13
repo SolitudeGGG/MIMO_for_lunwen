@@ -65,7 +65,7 @@ class OptimizedBitwidthOptimizer:
             header_file: MyComplex_1.h路径
             template_file: jinja2模板路径
             output_dir: 输出目录
-            ber_threshold: BER阈值（相对于基准BER）
+            ber_threshold: BER阈值（绝对值，默认0.01）
         """
         self.header_file = header_file
         self.template_file = template_file
@@ -394,7 +394,7 @@ class OptimizedBitwidthOptimizer:
             ber_diff = abs(ber - self.baseline_ber)
             print(f" BER={ber:.8f}, 差异={ber_diff:.8f}")
             
-            if ber_diff <= self.ber_threshold * self.baseline_ber:
+            if ber <= self.ber_threshold:
                 print(f"    ✓ 通过")
                 optimal_W = test_W
                 current_W = test_W
@@ -435,7 +435,7 @@ class OptimizedBitwidthOptimizer:
                 ber_diff = abs(ber - self.baseline_ber)
                 print(f" BER={ber:.8f}, 差异={ber_diff:.8f}")
                 
-                if ber_diff <= self.ber_threshold * self.baseline_ber:
+                if ber <= self.ber_threshold:
                     print(f"    ✓ 通过")
                     optimal_W = test_W
                     current_W = test_W
@@ -504,7 +504,7 @@ class OptimizedBitwidthOptimizer:
             ber_diff = abs(ber - self.baseline_ber)
             print(f" BER={ber:.8f}, 差异={ber_diff:.8f}")
             
-            if ber_diff <= self.ber_threshold * self.baseline_ber:
+            if ber <= self.ber_threshold:
                 print(f"    ✓ 通过")
                 optimal_I = test_I
                 current_I = test_I

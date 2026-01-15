@@ -476,6 +476,37 @@ MyComplex complex_multiply_hw(TA a, TB b)
     result.imag = local_temp_3 + local_temp_4;
     return result;
 }
+template<typename RealT, typename ImagT>
+struct ComplexValue {
+	RealT real;
+	ImagT imag;
+};
+template<typename TA, typename TB>
+using ComplexMulResult = ComplexValue<
+	decltype(((TA*)0)->real * ((TB*)0)->real - ((TA*)0)->imag * ((TB*)0)->imag),
+	decltype(((TA*)0)->real * ((TB*)0)->imag + ((TA*)0)->imag * ((TB*)0)->real)>;
+template<typename TA, typename TB>
+ComplexMulResult<TA, TB> complex_multiply_mixed(const TA& a, const TB& b)
+{
+	#pragma HLS INLINE
+	ComplexMulResult<TA, TB> result;
+	auto rr = a.real * b.real;
+	auto ii = a.imag * b.imag;
+	auto ri = a.real * b.imag;
+	auto ir = a.imag * b.real;
+	result.real = rr - ii;
+	result.imag = ri + ir;
+	return result;
+}
+template<typename RetType, typename TA, typename TB>
+RetType complex_add_mixed(const TA& a, const TB& b)
+{
+	#pragma HLS INLINE
+	RetType result;
+	result.real = a.real + b.real;
+	result.imag = a.imag + b.imag;
+	return result;
+}
 // 复数加法
 template<typename TA, typename TB>
 MyComplex complex_add_hw(TA a, TB b)
@@ -1346,11 +1377,17 @@ void c_matmultiple_hw_pro(
 	int m = Ntr_1;
 	int n = Ntr_1;
 	int k = Ntr_1;
+	using prod_t = ComplexMulResult<TA, TB>;
+	using sum_t = ComplexValue<
+		decltype(((prod_t*)0)->real + ((prod_t*)0)->real),
+		decltype(((prod_t*)0)->imag + ((prod_t*)0)->imag)>;
 	for (int i = 0; i < m; i++) {
 		#pragma HLS UNROLL
 		for (int j = 0; j < n; j++) {
 			#pragma HLS UNROLL
-			MyComplex sum =  { (like_float)0.0, (like_float)0.0 }; // 初始化为复数零
+			sum_t sum;
+			sum.real = 0;
+			sum.imag = 0;
 			for (int l = 0; l < k; l++) {
 				#pragma HLS UNROLL
 				TA a_element;
@@ -1369,7 +1406,8 @@ void c_matmultiple_hw_pro(
 					b_element.real = matB[j * Ntr_1 + l].real;
 					b_element.imag = -matB[j * Ntr_1 + l].imag;
 				}
-				sum = complex_add_hw(sum, complex_multiply_hw(a_element, b_element));
+				auto product = complex_multiply_mixed(a_element, b_element);
+				sum = complex_add_mixed<sum_t>(sum, product);
 			}
 			res[i * Ntr_1 + j].real = sum.real;
             res[i * Ntr_1 + j].imag = sum.imag;

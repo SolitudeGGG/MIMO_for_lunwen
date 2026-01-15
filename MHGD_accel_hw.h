@@ -177,44 +177,17 @@ void samplers_process(
 );
 void comparison_r(
 	/*静态量*/
-	r_norm_t r_norm_survivor_1, r_norm_t r_norm_survivor_2, 
-	r_norm_t r_norm_survivor_3, r_norm_t r_norm_survivor_4,
-	// r_norm_t r_norm_survivor_5, r_norm_t r_norm_survivor_6,
-	// r_norm_t r_norm_survivor_7, r_norm_t r_norm_survivor_8,
-	MyComplex x_survivor[Ntr_1], MyComplex x_survivor_2[Ntr_1], 
-	MyComplex x_survivor_3[Ntr_1], MyComplex x_survivor_4[Ntr_1],
-	// MyComplex x_survivor_5[Ntr_1], MyComplex x_survivor_6[Ntr_1],
-	// MyComplex x_survivor_7[Ntr_1], MyComplex x_survivor_8[Ntr_1],
+	r_norm_t r_norm_survivor_all[samplers],
+	MyComplex x_survivor_all[samplers][Ntr_1],
 	/*结果量*/
 	MyComplex* x_survivor_final
 );
 
 
 void comparison_r_wrapper(
-    hls::stream<r_norm_t>& r_norm_in1,
-    hls::stream<r_norm_t>& r_norm_in2,
-	hls::stream<r_norm_t>& r_norm_in3,
-    hls::stream<r_norm_t>& r_norm_in4,
-	// hls::stream<r_norm_t>& r_norm_in5,
-    // hls::stream<r_norm_t>& r_norm_in6,
-	// hls::stream<r_norm_t>& r_norm_in7,
-    // hls::stream<r_norm_t>& r_norm_in8,
-    hls::stream<Myreal>& x_real_in1,
-    hls::stream<Myimage>& x_imag_in1,
-    hls::stream<Myreal>& x_real_in2,
-    hls::stream<Myimage>& x_imag_in2,
-	hls::stream<Myreal>& x_real_in3,
-    hls::stream<Myimage>& x_imag_in3,
-    hls::stream<Myreal>& x_real_in4,
-    hls::stream<Myimage>& x_imag_in4,
-	// hls::stream<Myreal>& x_real_in5,
-    // hls::stream<Myimage>& x_imag_in5,
-    // hls::stream<Myreal>& x_real_in6,
-    // hls::stream<Myimage>& x_imag_in6,
-	// hls::stream<Myreal>& x_real_in7,
-    // hls::stream<Myimage>& x_imag_in7,
-    // hls::stream<Myreal>& x_real_in8,
-    // hls::stream<Myimage>& x_imag_in8,
+    hls::stream<r_norm_t> r_norm_in[samplers],
+    hls::stream<Myreal> x_real_in[samplers],
+    hls::stream<Myimage> x_imag_in[samplers],
     MyComplex* x_final
 );
 void sampler_task(

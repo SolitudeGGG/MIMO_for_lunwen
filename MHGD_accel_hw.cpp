@@ -2078,66 +2078,23 @@ void samplers_process(
 }
 void comparison_r(
 	/*静态量*/
-	r_norm_t r_norm_survivor_1, r_norm_t r_norm_survivor_2, 
-	r_norm_t r_norm_survivor_3, r_norm_t r_norm_survivor_4,
-	// r_norm_t r_norm_survivor_5, r_norm_t r_norm_survivor_6,
-	// r_norm_t r_norm_survivor_7, r_norm_t r_norm_survivor_8,
-	MyComplex x_survivor[Ntr_1], MyComplex x_survivor_2[Ntr_1], 
-	MyComplex x_survivor_3[Ntr_1], MyComplex x_survivor_4[Ntr_1],
-	// MyComplex x_survivor_5[Ntr_1], MyComplex x_survivor_6[Ntr_1],
-	// MyComplex x_survivor_7[Ntr_1], MyComplex x_survivor_8[Ntr_1],
+	r_norm_t r_norm_survivor_all[samplers],
+	MyComplex x_survivor_all[samplers][Ntr_1],
 	/*结果量*/
 	MyComplex* x_survivor_final
 ){
-	int choice;
-	int i;
-	r_norm_t r_norm_survivor_all[samplers];
-	r_norm_t r_norm_survivor_final;
-	/*比较不同采样器结果（即比较r_norm_survivor大小）*/
-	r_norm_survivor_final = r_norm_survivor_1;
-	r_norm_survivor_all[0] = r_norm_survivor_1;
-	r_norm_survivor_all[1] = r_norm_survivor_2;
-	r_norm_survivor_all[2] = r_norm_survivor_3;
-	r_norm_survivor_all[3] = r_norm_survivor_4;
-
-	// r_norm_survivor_all[4] = r_norm_survivor_5;
-	// r_norm_survivor_all[5] = r_norm_survivor_6;
-	// r_norm_survivor_all[6] = r_norm_survivor_7;
-	// r_norm_survivor_all[7] = r_norm_survivor_8;
-	for(i=0; i<samplers; ++i){
+	int choice = 0;
+	r_norm_t r_norm_survivor_final = r_norm_survivor_all[0];
+	for(int i = 1; i < samplers; ++i){
+		#pragma HLS UNROLL
 		if(r_norm_survivor_all[i] < r_norm_survivor_final){
-			choice = i+1;
+			r_norm_survivor_final = r_norm_survivor_all[i];
+			choice = i;
 		}
 	}
-	/*选择x_survivor*/
-	switch(choice){
-		case 1:
-			for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor[i];
-			break;
-		case 2:
-			for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor_2[i];
-			break;
-		case 3:
-			for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor_3[i];
-			break;
-		case 4:
-			for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor_4[i];
-			break;
-		// case 5:
-			// for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor_5[i];
-			// break;
-		// case 6:
-			// for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor_6[i];
-			// break;
-		// case 7:
-			// for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor_7[i];
-			// break;
-		// case 8:
-			// for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor_8[i];
-			// break;
-		default:
-			for(i=0; i<Ntr_1; ++i)x_survivor_final[i] = x_survivor[i];
-			break;
+	for(int i = 0; i < Ntr_1; ++i){
+		#pragma HLS UNROLL
+		x_survivor_final[i] = x_survivor_all[choice][i];
 	}
 }
 template<typename TX, typename TY_real, typename TY_imag>
@@ -2159,75 +2116,29 @@ void out_hw(const TX* X, const int incX, TY_real* Y_real, TY_imag* Y_imag, int i
 /**********************************************************************************/
 /*流式比较函数*/
 void comparison_r_wrapper(
-    hls::stream<r_norm_t>& r_norm_in1,
-    hls::stream<r_norm_t>& r_norm_in2,
-	hls::stream<r_norm_t>& r_norm_in3,
-    hls::stream<r_norm_t>& r_norm_in4,
-	// hls::stream<r_norm_t>& r_norm_in5,
-    // hls::stream<r_norm_t>& r_norm_in6,
-	// hls::stream<r_norm_t>& r_norm_in7,
-    // hls::stream<r_norm_t>& r_norm_in8,
-    hls::stream<Myreal>& x_real_in1,
-    hls::stream<Myimage>& x_imag_in1,
-    hls::stream<Myreal>& x_real_in2,
-    hls::stream<Myimage>& x_imag_in2,
-	hls::stream<Myreal>& x_real_in3,
-    hls::stream<Myimage>& x_imag_in3,
-    hls::stream<Myreal>& x_real_in4,
-    hls::stream<Myimage>& x_imag_in4,
-	// hls::stream<Myreal>& x_real_in5,
-    // hls::stream<Myimage>& x_imag_in5,
-    // hls::stream<Myreal>& x_real_in6,
-    // hls::stream<Myimage>& x_imag_in6,
-	// hls::stream<Myreal>& x_real_in7,
-    // hls::stream<Myimage>& x_imag_in7,
-    // hls::stream<Myreal>& x_real_in8,
-    // hls::stream<Myimage>& x_imag_in8,
+    hls::stream<r_norm_t> r_norm_in[samplers],
+    hls::stream<Myreal> x_real_in[samplers],
+    hls::stream<Myimage> x_imag_in[samplers],
     MyComplex* x_final
 ){
-    // 直接从流中读取数据
-    r_norm_t r1 = r_norm_in1.read();
-    r_norm_t r2 = r_norm_in2.read();
-	r_norm_t r3 = r_norm_in3.read();
-    r_norm_t r4 = r_norm_in4.read();
-	// r_norm_t r5 = r_norm_in5.read();
-    // r_norm_t r6 = r_norm_in6.read();
-	// r_norm_t r7 = r_norm_in7.read();
-    // r_norm_t r8 = r_norm_in8.read();
-    
-    MyComplex x1[Ntr_1], x2[Ntr_1], x3[Ntr_1], x4[Ntr_1];//, x5[Ntr_1], x6[Ntr_1], x7[Ntr_1], x8[Ntr_1];
-    #pragma HLS ARRAY_PARTITION variable=x1 complete dim=1
-    #pragma HLS ARRAY_PARTITION variable=x2 complete dim=1
-	#pragma HLS ARRAY_PARTITION variable=x3 complete dim=1
-    #pragma HLS ARRAY_PARTITION variable=x4 complete dim=1
-	// #pragma HLS ARRAY_PARTITION variable=x5 complete dim=1
-    // #pragma HLS ARRAY_PARTITION variable=x6 complete dim=1
-	// #pragma HLS ARRAY_PARTITION variable=x7 complete dim=1
-    // #pragma HLS ARRAY_PARTITION variable=x8 complete dim=1
-    
+    r_norm_t r_norm_survivor_all[samplers];
+    MyComplex x_survivor_all[samplers][Ntr_1];
+    #pragma HLS ARRAY_PARTITION variable=r_norm_survivor_all complete dim=1
+    #pragma HLS ARRAY_PARTITION variable=x_survivor_all complete dim=1
+    #pragma HLS ARRAY_PARTITION variable=x_survivor_all complete dim=2
+	for (int s = 0; s < samplers; ++s) {
+		#pragma HLS UNROLL
+		r_norm_survivor_all[s] = r_norm_in[s].read();
+	}
     for(int i = 0; i < Ntr_1; i++) {
         #pragma HLS unroll
-        x1[i].real = x_real_in1.read();
-        x1[i].imag = x_imag_in1.read();
-        x2[i].real = x_real_in2.read();
-        x2[i].imag = x_imag_in2.read();
-		x3[i].real = x_real_in3.read();
-        x3[i].imag = x_imag_in3.read();
-        x4[i].real = x_real_in4.read();
-        x4[i].imag = x_imag_in4.read();
-		//x5[i].real = x_real_in5.read();
-        //x5[i].imag = x_imag_in5.read();
-        //x6[i].real = x_real_in6.read();
-        //x6[i].imag = x_imag_in6.read();
-		//x7[i].real = x_real_in7.read();
-        //x7[i].imag = x_imag_in7.read();
-        //x8[i].real = x_real_in8.read();
-        //x8[i].imag = x_imag_in8.read();
+		for (int s = 0; s < samplers; ++s) {
+			#pragma HLS UNROLL
+			x_survivor_all[s][i].real = x_real_in[s].read();
+			x_survivor_all[s][i].imag = x_imag_in[s].read();
+		}
     }
-    
-    comparison_r(r1, r2, r3, r4, //r5, r6, r7, r8,
-		x1, x2, x3, x4, //x5, x6, x7, x8, 
-		x_final);
+    comparison_r(r_norm_survivor_all, x_survivor_all, x_final);
 }
 // /*shared data calculation*/
 // void shared_data_cal(
@@ -2515,9 +2426,16 @@ void comparison_r_wrapper(
 /*完全独立的单采样器函数*/
 void sampler_task(
     // 输入接口
-    hls::stream<H_real_t>& H_real_stream, hls::stream<H_imag_t>& H_imag_stream,
-    hls::stream<y_real_t>& y_real_stream, hls::stream<y_imag_t>& y_imag_stream,
     hls::stream<v_real_t>& v_tb_real_stream, hls::stream<v_imag_t>& v_tb_imag_stream,
+	MyComplex_H* H_local_shared,
+	MyComplex_y* y_local_shared,
+	MyComplex_grad_preconditioner* grad_preconditioner_shared,
+	MyComplex_pmat* pmat_shared,
+	MyComplex* constellation_norm_shared,
+	like_float dqam_shared,
+	like_float alpha_shared,
+	MyComplex_sigma2eye* sigma2eye_shared,
+	MyComplex_HH* HH_H_shared,
     float sigma2,
     int sampler_id,
 	unsigned seed_in,
@@ -2526,60 +2444,35 @@ void sampler_task(
 	hls::stream<r_norm_t>& r_norm_survivor_out
 ){
 	//本地变量
-	H_real_t H_real[Ntr_2];
-	H_imag_t H_imag[Ntr_2];
-	y_real_t y_real[Ntr_1];
-	y_imag_t y_imag[Ntr_1];
-	v_real_t v_tb_real[Ntr_1 * iter_1];
-	v_imag_t v_tb_imag[Ntr_1 * iter_1];
 	MyComplex x_hat[Ntr_1];
-	MyComplex_y y_local[Ntr_1];
-	MyComplex_H H_local[Ntr_2];
 	MyComplex_v v_tb_local[Ntr_1 * iter_1];
-	like_float alpha;
-	like_float dqam;
+	MyComplex_H* H_local = H_local_shared;
+	MyComplex_y* y_local = y_local_shared;
+	MyComplex_grad_preconditioner* grad_preconditioner = grad_preconditioner_shared;
+	MyComplex_pmat* pmat = pmat_shared;
+	MyComplex* constellation_norm = constellation_norm_shared;
+	MyComplex_sigma2eye* sigma2eye = sigma2eye_shared;
+	MyComplex_HH* HH_H = HH_H_shared;
+	like_float alpha = alpha_shared;
+	like_float dqam = dqam_shared;
 	step_size_t step_size;
 	r_norm_t r_norm;/*the norm of residual vector*/
 	r_norm_t r_norm_survivor;
 	lr_t lr;/*learning rate*/
-	MyComplex_grad_preconditioner grad_preconditioner[Ntr_2];
-	MyComplex constellation_norm[mu_double];/*depend on 2^mu*/
-	MyComplex_pmat pmat[Ntr_2];
 	MyComplex x_survivor[Ntr_1];
 	MyComplex_r r[Ntr_1];
 	MyComplex_pr_prev pr_prev[Ntr_1];
-	MyComplex_HH HH_H[Ntr_2];
-	MyComplex_sigma2eye sigma2eye[Ntr_2];
 	int offset = 0;
 	float sigma2_local = sigma2;
 	int lr_approx = lr_approx_1;
 	int mmse_init = mmse_init_1;
 	unsigned int seed = seed_in;
-	for(int i=0; i<Ntr_2; ++i){
-		H_real[i] = H_real_stream.read();
-		H_imag[i] = H_imag_stream.read();
-	}
-	for(int i=0; i<Ntr_1; ++i){
-		y_real[i] = y_real_stream.read();
-		y_imag[i] = y_imag_stream.read();
-	}
 	for(int i=0; i<Ntr_1*iter_1; ++i){
-		v_tb_real[i] = v_tb_real_stream.read();
-		v_tb_imag[i] = v_tb_imag_stream.read();
+		v_tb_local[i].real = v_tb_real_stream.read();
+		v_tb_local[i].imag = v_tb_imag_stream.read();
 	}
 
 	/*********************************数据准备************************************/
-	data_local<MyComplex_H, MyComplex_y, MyComplex_v, H_real_t, H_imag_t, y_real_t, y_imag_t, v_real_t, v_imag_t>(H_local, y_local, v_tb_local, H_real, H_imag, y_real, y_imag, v_tb_real, v_tb_imag);
-	/*定义发送符号之间最小距离的一半，是星座点经过归一化处理后的结果*/
-	get_dqam_hw(dqam);
-    /*初始化constellation_norm*/
-	constellation_norm_initial(constellation_norm, dqam);
-	/*二阶梯度下降，计算grad_preconditioner(梯度更新的预条件矩阵)*/
-	grad_preconditioner_updater_hw(H_local, HH_H, sigma2eye, grad_preconditioner, sigma2_local, dqam);
-	/*alpha*/
-	get_alpha(alpha);
-    /*For learning rate line search */
-    learning_rate_line_search_hw<MyComplex_H, MyComplex_grad_preconditioner, MyComplex_pmat>(lr_approx, H_local, grad_preconditioner, Ntr_1, Ntr_1, pmat);
     /*x的初始化*/
     x_initialize_hw(mmse_init, sigma2eye, Ntr_1, Ntr_1, sigma2_local, HH_H, H_local, y_local, sampler_id, dqam, x_hat, constellation_norm, seed);
 	/*计算剩余向量r=y-Hx*/
@@ -2658,120 +2551,71 @@ void MHGD_detect_accel_hw(
 	// #pragma HLS INTERFACE mode=m_axi port=v_tb_real_8 depth=num_ran offset=slave
     // #pragma HLS INTERFACE mode=m_axi port=v_tb_imag_8 depth=num_ran offset=slave
 
+	//共享数据准备
+	MyComplex_H H_local_shared[Ntr_2];
+	MyComplex_y y_local_shared[Ntr_1];
+	MyComplex_grad_preconditioner grad_preconditioner_shared[Ntr_2];
+	MyComplex_pmat pmat_shared[Ntr_2];
+	MyComplex constellation_norm_shared[mu_double];
+	MyComplex_sigma2eye sigma2eye_shared[Ntr_2];
+	MyComplex_HH HH_H_shared[Ntr_2];
+	like_float dqam_shared;
+	like_float alpha_shared;
+	float sigma2_shared = sigma2;
+	int lr_approx = lr_approx_1;
+	#pragma HLS ARRAY_PARTITION variable=H_local_shared complete dim=1
+	#pragma HLS ARRAY_PARTITION variable=y_local_shared complete dim=1
+	#pragma HLS ARRAY_PARTITION variable=grad_preconditioner_shared complete dim=1
+	#pragma HLS ARRAY_PARTITION variable=pmat_shared complete dim=1
+	#pragma HLS ARRAY_PARTITION variable=constellation_norm_shared complete dim=1
+	#pragma HLS ARRAY_PARTITION variable=sigma2eye_shared complete dim=1
+	#pragma HLS ARRAY_PARTITION variable=HH_H_shared complete dim=1
+	H_LOAD:
+	for(int i = 0; i < Ntr_2; ++i) {
+		#pragma HLS PIPELINE II=1
+		H_local_shared[i].real = H_real[i];
+		H_local_shared[i].imag = H_imag[i];
+	}
+	Y_LOAD:
+	for(int i = 0; i < Ntr_1; ++i) {
+		#pragma HLS PIPELINE II=1
+		y_local_shared[i].real = y_real[i];
+		y_local_shared[i].imag = y_imag[i];
+	}
+	get_dqam_hw(dqam_shared);
+	constellation_norm_initial(constellation_norm_shared, dqam_shared);
+	grad_preconditioner_updater_hw(H_local_shared, HH_H_shared, sigma2eye_shared, grad_preconditioner_shared, sigma2_shared, dqam_shared);
+	get_alpha(alpha_shared);
+	learning_rate_line_search_hw<MyComplex_H, MyComplex_grad_preconditioner, MyComplex_pmat>(lr_approx, H_local_shared, grad_preconditioner_shared, Ntr_1, Ntr_1, pmat_shared);
+
 	//输入数据转换为流数据
-	hls::stream<H_real_t> H_real_stream[samplers];
-    hls::stream<H_imag_t> H_imag_stream[samplers];
-    hls::stream<y_real_t> y_real_stream[samplers];
-    hls::stream<y_imag_t> y_imag_stream[samplers];
     hls::stream<v_real_t> v_tb_real_stream[samplers];
     hls::stream<v_imag_t> v_tb_imag_stream[samplers];
-	#pragma HLS STREAM variable=H_real_stream depth=256
-    #pragma HLS STREAM variable=H_imag_stream depth=256
-	#pragma HLS STREAM variable=y_real_stream depth=256
-    #pragma HLS STREAM variable=y_imag_stream depth=256
 	#pragma HLS STREAM variable=v_tb_real_stream depth=256
     #pragma HLS STREAM variable=v_tb_imag_stream depth=256
 	//采样器结果
-	hls::stream<Myreal> x_survivor_real_1;
-    hls::stream<Myimage> x_survivor_imag_1;
-    hls::stream<Myreal> x_survivor_real_2;
-    hls::stream<Myimage> x_survivor_imag_2;
-	hls::stream<Myreal> x_survivor_real_3;
-    hls::stream<Myimage> x_survivor_imag_3;
-	hls::stream<Myreal> x_survivor_real_4;
-    hls::stream<Myimage> x_survivor_imag_4;
-	// hls::stream<Myreal> x_survivor_real_5;
-    // hls::stream<Myimage> x_survivor_imag_5;
-	// hls::stream<Myreal> x_survivor_real_6;
-    // hls::stream<Myimage> x_survivor_imag_6;
-	// hls::stream<Myreal> x_survivor_real_7;
-    // hls::stream<Myimage> x_survivor_imag_7;
-	// hls::stream<Myreal> x_survivor_real_8;
-    // hls::stream<Myimage> x_survivor_imag_8;
-    hls::stream<r_norm_t> r_norm_survivor_out_1_stream;
-    hls::stream<r_norm_t> r_norm_survivor_out_2_stream;
-	hls::stream<r_norm_t> r_norm_survivor_out_3_stream;
-    hls::stream<r_norm_t> r_norm_survivor_out_4_stream;
-	// hls::stream<r_norm_t> r_norm_survivor_out_5_stream;
-    // hls::stream<r_norm_t> r_norm_survivor_out_6_stream;
-	// hls::stream<r_norm_t> r_norm_survivor_out_7_stream;
-	// hls::stream<r_norm_t> r_norm_survivor_out_8_stream;
-
-	#pragma HLS STREAM variable=x_survivor_real_1 depth=Ntr_1
-    #pragma HLS STREAM variable=x_survivor_imag_1 depth=Ntr_1
-	#pragma HLS STREAM variable=x_survivor_real_2 depth=Ntr_1
-    #pragma HLS STREAM variable=x_survivor_imag_2 depth=Ntr_1
-	#pragma HLS STREAM variable=x_survivor_real_3 depth=Ntr_1
-    #pragma HLS STREAM variable=x_survivor_imag_3 depth=Ntr_1
-	#pragma HLS STREAM variable=x_survivor_real_4 depth=Ntr_1
-    #pragma HLS STREAM variable=x_survivor_imag_4 depth=Ntr_1
-	// #pragma HLS STREAM variable=x_survivor_real_5 depth=Ntr_1
-    // #pragma HLS STREAM variable=x_survivor_imag_5 depth=Ntr_1
-	// #pragma HLS STREAM variable=x_survivor_real_6 depth=Ntr_1
-    // #pragma HLS STREAM variable=x_survivor_imag_6 depth=Ntr_1
-	// #pragma HLS STREAM variable=x_survivor_real_7 depth=Ntr_1
-    // #pragma HLS STREAM variable=x_survivor_imag_7 depth=Ntr_1
-	// #pragma HLS STREAM variable=x_survivor_real_8 depth=Ntr_1
-    // #pragma HLS STREAM variable=x_survivor_imag_8 depth=Ntr_1
-	#pragma HLS STREAM variable=r_norm_survivor_out_1_stream depth=1
-    #pragma HLS STREAM variable=r_norm_survivor_out_2_stream depth=1
-	#pragma HLS STREAM variable=r_norm_survivor_out_3_stream depth=1
-	#pragma HLS STREAM variable=r_norm_survivor_out_4_stream depth=1
-	// #pragma HLS STREAM variable=r_norm_survivor_out_5_stream depth=1
-	// #pragma HLS STREAM variable=r_norm_survivor_out_6_stream depth=1
-	// #pragma HLS STREAM variable=r_norm_survivor_out_7_stream depth=1
-	// #pragma HLS STREAM variable=r_norm_survivor_out_8_stream depth=1
+	hls::stream<Myreal> x_survivor_real[samplers];
+    hls::stream<Myimage> x_survivor_imag[samplers];
+    hls::stream<r_norm_t> r_norm_survivor_out_stream[samplers];
+	#pragma HLS STREAM variable=x_survivor_real depth=Ntr_1
+    #pragma HLS STREAM variable=x_survivor_imag depth=Ntr_1
+	#pragma HLS STREAM variable=r_norm_survivor_out_stream depth=1
 
 	MyComplex x_survivor_final[Ntr_1];
 	#pragma HLS ARRAY_PARTITION variable=x_survivor_final complete dim=1
-	int sampler_id_1 = 1;
-	int sampler_id_2 = 2;
-	int sampler_id_3 = 3;
-	int sampler_id_4 = 4;
-	// int sampler_id_5 = 5;
-	// int sampler_id_6 = 6;
-	// int sampler_id_7 = 7;
-	// int sampler_id_8 = 8;
-	float sigma2_1 = sigma2;
-	float sigma2_2 = sigma2;
-	float sigma2_3 = sigma2;
-	float sigma2_4 = sigma2;
-	// float sigma2_5 = sigma2;
-	// float sigma2_6 = sigma2;
-	// float sigma2_7 = sigma2;
-	// float sigma2_8 = sigma2;
-	unsigned int seed1 = seed_1;
-	unsigned int seed2 = seed_2;
-	unsigned int seed3 = seed_3;
-	unsigned int seed4 = seed_4;
-	// unsigned int seed5 = seed_5;
-	// unsigned int seed6 = seed_6;
-	// unsigned int seed7 = seed_7;
-	// unsigned int seed8 = seed_8;
+	int sampler_id[samplers];
+	unsigned int seed[samplers];
+	#pragma HLS ARRAY_PARTITION variable=sampler_id complete dim=1
+	#pragma HLS ARRAY_PARTITION variable=seed complete dim=1
+	const unsigned int seed_values[4] = {seed_1, seed_2, seed_3, seed_4};
+	#pragma HLS ARRAY_PARTITION variable=seed_values complete dim=1
+	for (int s = 0; s < samplers; ++s) {
+		#pragma HLS UNROLL
+		sampler_id[s] = s + 1;
+		seed[s] = seed_values[s];
+	}
 	#pragma HLS dataflow
 	/**************************** 数据分发 *******************************/
-    H_DISTRIBUTE:
-    for(int i = 0; i < Ntr_2; ++i) {
-        #pragma HLS PIPELINE II=1
-        H_real_t h_real = H_real[i];
-        H_imag_t h_imag = H_imag[i];
-		for (int s = 0; s < samplers; ++s) {
-			#pragma HLS UNROLL
-			H_real_stream[s].write(h_real);
-			H_imag_stream[s].write(h_imag);
-		}
-    }
-    Y_DISTRIBUTE:
-    for(int i = 0; i < Ntr_1; ++i) {
-        #pragma HLS PIPELINE II=1
-        y_real_t y_r = y_real[i];
-        y_imag_t y_i = y_imag[i];
-		for (int s = 0; s < samplers; ++s) {
-			#pragma HLS UNROLL
-			y_real_stream[s].write(y_r);
-			y_imag_stream[s].write(y_i);
-		}
-    }
     V_DISTRIBUTE:
     for(int i = 0; i < Ntr_1 * iter_1; ++i) {
         #pragma HLS PIPELINE II=1
@@ -2779,14 +2623,15 @@ void MHGD_detect_accel_hw(
 		v_imag_t v_i[samplers];
 		#pragma HLS ARRAY_PARTITION variable=v_r complete dim=1
 		#pragma HLS ARRAY_PARTITION variable=v_i complete dim=1
-        v_r[0] = v_tb_real[i];
-        v_i[0] = v_tb_imag[i];
-		v_r[1] = v_tb_real_2[i];
-        v_i[1] = v_tb_imag_2[i];
-		v_r[2] = v_tb_real_3[i];
-        v_i[2] = v_tb_imag_3[i];
-		v_r[3] = v_tb_real_4[i];
-        v_i[3] = v_tb_imag_4[i];
+		const v_real_t* v_real_ptrs[4] = {v_tb_real, v_tb_real_2, v_tb_real_3, v_tb_real_4};
+		const v_imag_t* v_imag_ptrs[4] = {v_tb_imag, v_tb_imag_2, v_tb_imag_3, v_tb_imag_4};
+		#pragma HLS ARRAY_PARTITION variable=v_real_ptrs complete dim=1
+		#pragma HLS ARRAY_PARTITION variable=v_imag_ptrs complete dim=1
+		for (int s = 0; s < samplers; ++s) {
+			#pragma HLS UNROLL
+			v_r[s] = v_real_ptrs[s][i];
+			v_i[s] = v_imag_ptrs[s][i];
+		}
 		for (int s = 0; s < samplers; ++s) {
 			#pragma HLS UNROLL
 			v_tb_real_stream[s].write(v_r[s]);
@@ -2795,100 +2640,25 @@ void MHGD_detect_accel_hw(
     }
 	/****************************采样器并行采样*******************************/
 	// #pragma HLS allocation instances=sampler_task limit=2 function
-	sampler_task(
-		// 输入接口
-		H_real_stream[0], H_imag_stream[0], 
-		y_real_stream[0], y_imag_stream[0], 
-		v_tb_real_stream[0], v_tb_imag_stream[0], 
-		sigma2_1, sampler_id_1, seed1,
-		// 输出接口
-		x_survivor_real_1, x_survivor_imag_1, 
-		r_norm_survivor_out_1_stream
-	);
-	sampler_task(
-		// 输入接口
-		H_real_stream[1], H_imag_stream[1], 
-		y_real_stream[1], y_imag_stream[1], 
-		v_tb_real_stream[1], v_tb_imag_stream[1], 
-		sigma2_2, sampler_id_2, seed2,
-		// 输出接口
-		x_survivor_real_2, x_survivor_imag_2, 
-		r_norm_survivor_out_2_stream
-	);
-	sampler_task(
-		// 输入接口
-		H_real_stream[2], H_imag_stream[2], 
-		y_real_stream[2], y_imag_stream[2], 
-		v_tb_real_stream[2], v_tb_imag_stream[2], 
-		sigma2_3, sampler_id_3, seed3,
-		// 输出接口
-		x_survivor_real_3, x_survivor_imag_3, 
-		r_norm_survivor_out_3_stream
-	);
-	sampler_task(
-		// 输入接口
-		H_real_stream[3], H_imag_stream[3], 
-		y_real_stream[3], y_imag_stream[3], 
-		v_tb_real_stream[3], v_tb_imag_stream[3], 
-		sigma2_4, sampler_id_4, seed4,
-		// 输出接口
-		x_survivor_real_4, x_survivor_imag_4, 
-		r_norm_survivor_out_4_stream
-	);
-	// sampler_task(
-	// 	// 输入接口
-	// 	H_real_stream_5, H_imag_stream_5, 
-	// 	y_real_stream_5, y_imag_stream_5, 
-	// 	v_tb_real_stream_5, v_tb_imag_stream_5, 
-	// 	sigma2_5, sampler_id_5, seed5,
-	// 	// 输出接口
-	// 	x_survivor_real_5, x_survivor_imag_5, 
-	// 	r_norm_survivor_out_5_stream
-	// );
-	// sampler_task(
-	// 	// 输入接口
-	// 	H_real_stream_6, H_imag_stream_6, 
-	// 	y_real_stream_6, y_imag_stream_6, 
-	// 	v_tb_real_stream_6, v_tb_imag_stream_6, 
-	// 	sigma2_6, sampler_id_6, seed6,
-	// 	// 输出接口
-	// 	x_survivor_real_6, x_survivor_imag_6, 
-	// 	r_norm_survivor_out_6_stream
-	// );
-	// sampler_task(
-	// 	// 输入接口
-	// 	H_real_stream_7, H_imag_stream_7, 
-	// 	y_real_stream_7, y_imag_stream_7, 
-	// 	v_tb_real_stream_7, v_tb_imag_stream_7, 
-	// 	sigma2_7, sampler_id_7, seed7,
-	// 	// 输出接口
-	// 	x_survivor_real_7, x_survivor_imag_7, 
-	// 	r_norm_survivor_out_7_stream
-	// );
-	// sampler_task(
-	// 	// 输入接口
-	// 	H_real_stream_8, H_imag_stream_8, 
-	// 	y_real_stream_8, y_imag_stream_8, 
-	// 	v_tb_real_stream_8, v_tb_imag_stream_8, 
-	// 	sigma2_8, sampler_id_8, seed8,
-	// 	// 输出接口
-	// 	x_survivor_real_8, x_survivor_imag_8, 
-	// 	r_norm_survivor_out_8_stream
-	// );
+	SAMPLER_TASKS:
+	for (int s = 0; s < samplers; ++s) {
+		#pragma HLS UNROLL
+		sampler_task(
+			// 输入接口
+			v_tb_real_stream[s], v_tb_imag_stream[s],
+			H_local_shared, y_local_shared, grad_preconditioner_shared, pmat_shared,
+			constellation_norm_shared, dqam_shared, alpha_shared,
+			sigma2eye_shared, HH_H_shared,
+			sigma2_shared, sampler_id[s], seed[s],
+			// 输出接口
+			x_survivor_real[s], x_survivor_imag[s],
+			r_norm_survivor_out_stream[s]
+		);
+	}
 	/****************************采样结果比较*******************************/
 	comparison_r_wrapper(
-		r_norm_survivor_out_1_stream, r_norm_survivor_out_2_stream,
-		r_norm_survivor_out_3_stream, r_norm_survivor_out_4_stream,
-		// r_norm_survivor_out_5_stream, r_norm_survivor_out_6_stream,
-		// r_norm_survivor_out_7_stream, r_norm_survivor_out_8_stream,
-		x_survivor_real_1, x_survivor_imag_1,
-		x_survivor_real_2, x_survivor_imag_2,
-		x_survivor_real_3, x_survivor_imag_3,
-		x_survivor_real_4, x_survivor_imag_4,
-		// x_survivor_real_5, x_survivor_imag_5,
-		// x_survivor_real_6, x_survivor_imag_6,
-		// x_survivor_real_7, x_survivor_imag_7,
-		// x_survivor_real_8, x_survivor_imag_8,
+		r_norm_survivor_out_stream,
+		x_survivor_real, x_survivor_imag,
 		x_survivor_final
 	);
     /****************************迭代结束x_survivor写入输出口*********************************/

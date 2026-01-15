@@ -177,84 +177,17 @@ void samplers_process(
 );
 void comparison_r(
 	/*静态量*/
-	r_norm_t r_norm_survivor_1, r_norm_t r_norm_survivor_2, 
-	r_norm_t r_norm_survivor_3, r_norm_t r_norm_survivor_4,
-	// r_norm_t r_norm_survivor_5, r_norm_t r_norm_survivor_6,
-	// r_norm_t r_norm_survivor_7, r_norm_t r_norm_survivor_8,
-	MyComplex x_survivor[Ntr_1], MyComplex x_survivor_2[Ntr_1], 
-	MyComplex x_survivor_3[Ntr_1], MyComplex x_survivor_4[Ntr_1],
-	// MyComplex x_survivor_5[Ntr_1], MyComplex x_survivor_6[Ntr_1],
-	// MyComplex x_survivor_7[Ntr_1], MyComplex x_survivor_8[Ntr_1],
+	r_norm_t r_norm_survivor_all[samplers],
+	MyComplex x_survivor_all[samplers][Ntr_1],
 	/*结果量*/
 	MyComplex* x_survivor_final
 );
 
 
-void data_distribution(
-    H_real_t* H_real, H_imag_t* H_imag,
-    y_real_t* y_real, y_imag_t* y_imag,
-    v_real_t* v_tb_real, v_imag_t* v_tb_imag,
-	v_real_t* v_tb_real_2, v_imag_t* v_tb_imag_2,
-	v_real_t* v_tb_real_3, v_imag_t* v_tb_imag_3,
-	v_real_t* v_tb_real_4, v_imag_t* v_tb_imag_4,
-	// v_real_t* v_tb_real_5, v_imag_t* v_tb_imag_5,
-	// v_real_t* v_tb_real_6, v_imag_t* v_tb_imag_6,
-	// v_real_t* v_tb_real_7, v_imag_t* v_tb_imag_7,
-	// v_real_t* v_tb_real_8, v_imag_t* v_tb_imag_8,
-
-    hls::stream<H_real_t>& H_real_out1, hls::stream<H_imag_t>& H_imag_out1,
-    hls::stream<y_real_t>& y_real_out1, hls::stream<y_imag_t>& y_imag_out1,
-    hls::stream<v_real_t>& v_tb_real_out1, hls::stream<v_imag_t>& v_tb_imag_out1,
-    hls::stream<H_real_t>& H_real_out2, hls::stream<H_imag_t>& H_imag_out2,
-    hls::stream<y_real_t>& y_real_out2, hls::stream<y_imag_t>& y_imag_out2,
-    hls::stream<v_real_t>& v_tb_real_out2, hls::stream<v_imag_t>& v_tb_imag_out2,
-	
-	hls::stream<H_real_t>& H_real_out3, hls::stream<H_imag_t>& H_imag_out3,
-    hls::stream<y_real_t>& y_real_out3, hls::stream<y_imag_t>& y_imag_out3,
-    hls::stream<v_real_t>& v_tb_real_out3, hls::stream<v_imag_t>& v_tb_imag_out3,
-    hls::stream<H_real_t>& H_real_out4, hls::stream<H_imag_t>& H_imag_out4,
-    hls::stream<y_real_t>& y_real_out4, hls::stream<y_imag_t>& y_imag_out4,
-    hls::stream<v_real_t>& v_tb_real_out4, hls::stream<v_imag_t>& v_tb_imag_out4
-
-	// hls::stream<H_real_t>& H_real_out5, hls::stream<H_imag_t>& H_imag_out5,
-    // hls::stream<y_real_t>& y_real_out5, hls::stream<y_imag_t>& y_imag_out5,
-    // hls::stream<v_real_t>& v_tb_real_out5, hls::stream<v_imag_t>& v_tb_imag_out5,
-    // hls::stream<H_real_t>& H_real_out6, hls::stream<H_imag_t>& H_imag_out6,
-    // hls::stream<y_real_t>& y_real_out6, hls::stream<y_imag_t>& y_imag_out6,
-    // hls::stream<v_real_t>& v_tb_real_out6, hls::stream<v_imag_t>& v_tb_imag_out6,
-
-	// hls::stream<H_real_t>& H_real_out7, hls::stream<H_imag_t>& H_imag_out7,
-    // hls::stream<y_real_t>& y_real_out7, hls::stream<y_imag_t>& y_imag_out7,
-    // hls::stream<v_real_t>& v_tb_real_out7, hls::stream<v_imag_t>& v_tb_imag_out7,
-    // hls::stream<H_real_t>& H_real_out8, hls::stream<H_imag_t>& H_imag_out8,
-    // hls::stream<y_real_t>& y_real_out8, hls::stream<y_imag_t>& y_imag_out8,
-    // hls::stream<v_real_t>& v_tb_real_out8, hls::stream<v_imag_t>& v_tb_imag_out8
-);
 void comparison_r_wrapper(
-    hls::stream<r_norm_t>& r_norm_in1,
-    hls::stream<r_norm_t>& r_norm_in2,
-	hls::stream<r_norm_t>& r_norm_in3,
-    hls::stream<r_norm_t>& r_norm_in4,
-	// hls::stream<r_norm_t>& r_norm_in5,
-    // hls::stream<r_norm_t>& r_norm_in6,
-	// hls::stream<r_norm_t>& r_norm_in7,
-    // hls::stream<r_norm_t>& r_norm_in8,
-    hls::stream<Myreal>& x_real_in1,
-    hls::stream<Myimage>& x_imag_in1,
-    hls::stream<Myreal>& x_real_in2,
-    hls::stream<Myimage>& x_imag_in2,
-	hls::stream<Myreal>& x_real_in3,
-    hls::stream<Myimage>& x_imag_in3,
-    hls::stream<Myreal>& x_real_in4,
-    hls::stream<Myimage>& x_imag_in4,
-	// hls::stream<Myreal>& x_real_in5,
-    // hls::stream<Myimage>& x_imag_in5,
-    // hls::stream<Myreal>& x_real_in6,
-    // hls::stream<Myimage>& x_imag_in6,
-	// hls::stream<Myreal>& x_real_in7,
-    // hls::stream<Myimage>& x_imag_in7,
-    // hls::stream<Myreal>& x_real_in8,
-    // hls::stream<Myimage>& x_imag_in8,
+    hls::stream<r_norm_t> r_norm_in[samplers],
+    hls::stream<Myreal> x_real_in[samplers],
+    hls::stream<Myimage> x_imag_in[samplers],
     MyComplex* x_final
 );
 void sampler_task(

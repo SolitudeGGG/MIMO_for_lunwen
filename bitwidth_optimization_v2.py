@@ -147,8 +147,8 @@ class OptimizedBitwidthOptimizer:
         
         # 生成typedef定义
         for var_name, config in sorted_vars:
-            W = config.get('current_W', config.get('optimal_W', 40))
-            I = config.get('current_I', config.get('optimal_I', 8))
+            W = config.get('optimal_W', config.get('init_W', 40))
+            I = config.get('optimal_I', config.get('init_I', 8))
             comment = f"// 变量: {var_name} (W={W}, I={I})"
             typedef_line = f"typedef ap_fixed<{W}, {I}> {var_name}_t;"
             header_lines.append(comment)

@@ -2610,18 +2610,26 @@ void MHGD_detect_accel_hw(
 	unsigned int seed[samplers];
 	#pragma HLS ARRAY_PARTITION variable=sampler_id complete dim=1
 	#pragma HLS ARRAY_PARTITION variable=seed complete dim=1
+	const unsigned int* seed_ptrs[samplers];
+	#pragma HLS ARRAY_PARTITION variable=seed_ptrs complete dim=1
 	for (int s = 0; s < samplers; ++s) {
 		#pragma HLS UNROLL
 		sampler_id[s] = s + 1;
-		if (s == 0) {
-			seed[s] = seed_1;
-		} else if (s == 1) {
-			seed[s] = seed_2;
-		} else if (s == 2) {
-			seed[s] = seed_3;
-		} else {
-			seed[s] = seed_4;
+		switch (s) {
+			case 0:
+				seed_ptrs[s] = &seed_1;
+				break;
+			case 1:
+				seed_ptrs[s] = &seed_2;
+				break;
+			case 2:
+				seed_ptrs[s] = &seed_3;
+				break;
+			default:
+				seed_ptrs[s] = &seed_4;
+				break;
 		}
+		seed[s] = *seed_ptrs[s];
 	}
 	#pragma HLS dataflow
 	/**************************** 数据分发 *******************************/
@@ -2638,18 +2646,23 @@ void MHGD_detect_accel_hw(
 		#pragma HLS ARRAY_PARTITION variable=v_imag_ptrs complete dim=1
 		for (int s = 0; s < samplers; ++s) {
 			#pragma HLS UNROLL
-			if (s == 0) {
-				v_real_ptrs[s] = v_tb_real;
-				v_imag_ptrs[s] = v_tb_imag;
-			} else if (s == 1) {
-				v_real_ptrs[s] = v_tb_real_2;
-				v_imag_ptrs[s] = v_tb_imag_2;
-			} else if (s == 2) {
-				v_real_ptrs[s] = v_tb_real_3;
-				v_imag_ptrs[s] = v_tb_imag_3;
-			} else {
-				v_real_ptrs[s] = v_tb_real_4;
-				v_imag_ptrs[s] = v_tb_imag_4;
+			switch (s) {
+				case 0:
+					v_real_ptrs[s] = v_tb_real;
+					v_imag_ptrs[s] = v_tb_imag;
+					break;
+				case 1:
+					v_real_ptrs[s] = v_tb_real_2;
+					v_imag_ptrs[s] = v_tb_imag_2;
+					break;
+				case 2:
+					v_real_ptrs[s] = v_tb_real_3;
+					v_imag_ptrs[s] = v_tb_imag_3;
+					break;
+				default:
+					v_real_ptrs[s] = v_tb_real_4;
+					v_imag_ptrs[s] = v_tb_imag_4;
+					break;
 			}
 			v_r[s] = v_real_ptrs[s][i];
 			v_i[s] = v_imag_ptrs[s][i];

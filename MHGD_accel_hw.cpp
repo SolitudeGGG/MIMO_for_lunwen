@@ -477,12 +477,14 @@ MyComplex complex_multiply_hw(TA a, TB b)
     result.imag = local_temp_3 + local_temp_4;
     return result;
 }
+// 混合位宽复数容器：用于避免默认提升到 MyComplex 的宽位宽
 template<typename RealT, typename ImagT>
 struct ComplexValue {
     RealT real;
     ImagT imag;
 };
 template<typename TA, typename TB>
+// 混合位宽复数乘法的类型推导辅助
 struct ComplexMulTypes {
     using real_mul_t = decltype(std::declval<TA>().real * std::declval<TB>().real);
     using imag_mul_t = decltype(std::declval<TA>().imag * std::declval<TB>().imag);
@@ -1396,8 +1398,8 @@ void c_matmultiple_hw_pro(
 		for (int j = 0; j < n; j++) {
 			#pragma HLS UNROLL
 			sum_t sum;
-			sum.real = 0;
-			sum.imag = 0;
+			sum.real = decltype(sum.real)(0);
+			sum.imag = decltype(sum.imag)(0);
 			for (int l = 0; l < k; l++) {
 				#pragma HLS UNROLL
 				TA a_element;

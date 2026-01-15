@@ -2623,6 +2623,9 @@ void MHGD_detect_accel_hw(
 			case 2:
 				seed[s] = seed_3;
 				break;
+			case 3:
+				seed[s] = seed_4;
+				break;
 			default:
 				seed[s] = seed_4;
 				break;
@@ -2651,6 +2654,10 @@ void MHGD_detect_accel_hw(
 				case 2:
 					v_r[s] = v_tb_real_3[i];
 					v_i[s] = v_tb_imag_3[i];
+					break;
+				case 3:
+					v_r[s] = v_tb_real_4[i];
+					v_i[s] = v_tb_imag_4[i];
 					break;
 				default:
 					v_r[s] = v_tb_real_4[i];

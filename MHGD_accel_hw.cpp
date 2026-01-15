@@ -483,9 +483,18 @@ struct ComplexValue {
 	ImagT imag;
 };
 template<typename TA, typename TB>
+struct ComplexMulTypes {
+	using real_mul_t = decltype(std::declval<TA>().real * std::declval<TB>().real);
+	using imag_mul_t = decltype(std::declval<TA>().imag * std::declval<TB>().imag);
+	using cross1_t = decltype(std::declval<TA>().real * std::declval<TB>().imag);
+	using cross2_t = decltype(std::declval<TA>().imag * std::declval<TB>().real);
+	using real_t = decltype(std::declval<real_mul_t>() - std::declval<imag_mul_t>());
+	using imag_t = decltype(std::declval<cross1_t>() + std::declval<cross2_t>());
+};
+template<typename TA, typename TB>
 using ComplexMulResult = ComplexValue<
-	decltype(std::declval<TA>().real * std::declval<TB>().real - std::declval<TA>().imag * std::declval<TB>().imag),
-	decltype(std::declval<TA>().real * std::declval<TB>().imag + std::declval<TA>().imag * std::declval<TB>().real)>;
+	typename ComplexMulTypes<TA, TB>::real_t,
+	typename ComplexMulTypes<TA, TB>::imag_t>;
 template<typename TA, typename TB>
 ComplexMulResult<TA, TB> complex_multiply_mixed(const TA& a, const TB& b)
 {

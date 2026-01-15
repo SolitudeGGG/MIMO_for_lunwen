@@ -6,6 +6,9 @@
 #include <utility>
 #include "hls_stream.h"
 
+static_assert(samplers > 0, "samplers must be positive");
+static_assert(samplers <= 4, "samplers must be <= 4 for current top-level ports");
+
 
 MyComplex QPSK_Constellation_hw[4] = {{-1,-1},{-1,1},{1,-1},{1,1}};
 MyComplex _16QAM_Constellation_hw[16] = {{-3.0,-3.0},{-3.0,-1.0},{-3.0,3.0},{-3.0,1.0},

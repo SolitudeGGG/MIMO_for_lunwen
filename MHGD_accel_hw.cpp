@@ -3,6 +3,7 @@
 #include "MHGD_accel_hw.h"
 #include <stdio.h>
 #include <string.h>
+#include <utility>
 #include "hls_stream.h"
 
 
@@ -483,8 +484,8 @@ struct ComplexValue {
 };
 template<typename TA, typename TB>
 using ComplexMulResult = ComplexValue<
-	decltype(((TA*)0)->real * ((TB*)0)->real - ((TA*)0)->imag * ((TB*)0)->imag),
-	decltype(((TA*)0)->real * ((TB*)0)->imag + ((TA*)0)->imag * ((TB*)0)->real)>;
+	decltype(std::declval<TA>().real * std::declval<TB>().real - std::declval<TA>().imag * std::declval<TB>().imag),
+	decltype(std::declval<TA>().real * std::declval<TB>().imag + std::declval<TA>().imag * std::declval<TB>().real)>;
 template<typename TA, typename TB>
 ComplexMulResult<TA, TB> complex_multiply_mixed(const TA& a, const TB& b)
 {
@@ -1379,8 +1380,8 @@ void c_matmultiple_hw_pro(
 	int k = Ntr_1;
 	using prod_t = ComplexMulResult<TA, TB>;
 	using sum_t = ComplexValue<
-		decltype(((prod_t*)0)->real + ((prod_t*)0)->real),
-		decltype(((prod_t*)0)->imag + ((prod_t*)0)->imag)>;
+		decltype(std::declval<prod_t>().real + std::declval<prod_t>().real),
+		decltype(std::declval<prod_t>().imag + std::declval<prod_t>().imag)>;
 	for (int i = 0; i < m; i++) {
 		#pragma HLS UNROLL
 		for (int j = 0; j < n; j++) {

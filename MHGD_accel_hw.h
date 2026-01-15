@@ -190,46 +190,6 @@ void comparison_r(
 );
 
 
-void data_distribution(
-    H_real_t* H_real, H_imag_t* H_imag,
-    y_real_t* y_real, y_imag_t* y_imag,
-    v_real_t* v_tb_real, v_imag_t* v_tb_imag,
-	v_real_t* v_tb_real_2, v_imag_t* v_tb_imag_2,
-	v_real_t* v_tb_real_3, v_imag_t* v_tb_imag_3,
-	v_real_t* v_tb_real_4, v_imag_t* v_tb_imag_4,
-	// v_real_t* v_tb_real_5, v_imag_t* v_tb_imag_5,
-	// v_real_t* v_tb_real_6, v_imag_t* v_tb_imag_6,
-	// v_real_t* v_tb_real_7, v_imag_t* v_tb_imag_7,
-	// v_real_t* v_tb_real_8, v_imag_t* v_tb_imag_8,
-
-    hls::stream<H_real_t>& H_real_out1, hls::stream<H_imag_t>& H_imag_out1,
-    hls::stream<y_real_t>& y_real_out1, hls::stream<y_imag_t>& y_imag_out1,
-    hls::stream<v_real_t>& v_tb_real_out1, hls::stream<v_imag_t>& v_tb_imag_out1,
-    hls::stream<H_real_t>& H_real_out2, hls::stream<H_imag_t>& H_imag_out2,
-    hls::stream<y_real_t>& y_real_out2, hls::stream<y_imag_t>& y_imag_out2,
-    hls::stream<v_real_t>& v_tb_real_out2, hls::stream<v_imag_t>& v_tb_imag_out2,
-	
-	hls::stream<H_real_t>& H_real_out3, hls::stream<H_imag_t>& H_imag_out3,
-    hls::stream<y_real_t>& y_real_out3, hls::stream<y_imag_t>& y_imag_out3,
-    hls::stream<v_real_t>& v_tb_real_out3, hls::stream<v_imag_t>& v_tb_imag_out3,
-    hls::stream<H_real_t>& H_real_out4, hls::stream<H_imag_t>& H_imag_out4,
-    hls::stream<y_real_t>& y_real_out4, hls::stream<y_imag_t>& y_imag_out4,
-    hls::stream<v_real_t>& v_tb_real_out4, hls::stream<v_imag_t>& v_tb_imag_out4
-
-	// hls::stream<H_real_t>& H_real_out5, hls::stream<H_imag_t>& H_imag_out5,
-    // hls::stream<y_real_t>& y_real_out5, hls::stream<y_imag_t>& y_imag_out5,
-    // hls::stream<v_real_t>& v_tb_real_out5, hls::stream<v_imag_t>& v_tb_imag_out5,
-    // hls::stream<H_real_t>& H_real_out6, hls::stream<H_imag_t>& H_imag_out6,
-    // hls::stream<y_real_t>& y_real_out6, hls::stream<y_imag_t>& y_imag_out6,
-    // hls::stream<v_real_t>& v_tb_real_out6, hls::stream<v_imag_t>& v_tb_imag_out6,
-
-	// hls::stream<H_real_t>& H_real_out7, hls::stream<H_imag_t>& H_imag_out7,
-    // hls::stream<y_real_t>& y_real_out7, hls::stream<y_imag_t>& y_imag_out7,
-    // hls::stream<v_real_t>& v_tb_real_out7, hls::stream<v_imag_t>& v_tb_imag_out7,
-    // hls::stream<H_real_t>& H_real_out8, hls::stream<H_imag_t>& H_imag_out8,
-    // hls::stream<y_real_t>& y_real_out8, hls::stream<y_imag_t>& y_imag_out8,
-    // hls::stream<v_real_t>& v_tb_real_out8, hls::stream<v_imag_t>& v_tb_imag_out8
-);
 void comparison_r_wrapper(
     hls::stream<r_norm_t>& r_norm_in1,
     hls::stream<r_norm_t>& r_norm_in2,

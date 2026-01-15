@@ -5,6 +5,7 @@
 ## 更新记录
 - 2026-01-15：新增混合位宽复数运算（`complex_multiply_mixed`/`ComplexMulTypes`），在 `c_matmultiple_hw_pro` 中使用推导位宽的累加类型，仅在写回 `res` 时进行位宽转换。
 - 2026-01-15：共享数据准备（`H_local/y_local/grad_preconditioner/pmat/constellation_norm`）改为顶层计算一次并广播给采样器，同时采样器调用与比较逻辑改为基于 `samplers` 的数组化实现，调整采样器数量更集中。
+- 2026-01-15：增加 `samplers` 范围的编译期检查与调试断言，避免采样器数量超出当前端口支持时产生隐式映射。
 
 ## 1. 顶层 Dataflow 与接口优化
 - **移除 `data_distribution` 串行分发**：在 `MHGD_detect_accel_hw` 内直接通过 `H_DISTRIBUTE / Y_DISTRIBUTE / V_DISTRIBUTE` 循环进行并行 fanout，内部 `for (s)` 使用 `#pragma HLS UNROLL`，避免串行瓶颈。

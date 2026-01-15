@@ -479,43 +479,43 @@ MyComplex complex_multiply_hw(TA a, TB b)
 }
 template<typename RealT, typename ImagT>
 struct ComplexValue {
-	RealT real;
-	ImagT imag;
+    RealT real;
+    ImagT imag;
 };
 template<typename TA, typename TB>
 struct ComplexMulTypes {
-	using real_mul_t = decltype(std::declval<TA>().real * std::declval<TB>().real);
-	using imag_mul_t = decltype(std::declval<TA>().imag * std::declval<TB>().imag);
-	using cross1_t = decltype(std::declval<TA>().real * std::declval<TB>().imag);
-	using cross2_t = decltype(std::declval<TA>().imag * std::declval<TB>().real);
-	using real_t = decltype(std::declval<real_mul_t>() - std::declval<imag_mul_t>());
-	using imag_t = decltype(std::declval<cross1_t>() + std::declval<cross2_t>());
+    using real_mul_t = decltype(std::declval<TA>().real * std::declval<TB>().real);
+    using imag_mul_t = decltype(std::declval<TA>().imag * std::declval<TB>().imag);
+    using cross1_t = decltype(std::declval<TA>().real * std::declval<TB>().imag);
+    using cross2_t = decltype(std::declval<TA>().imag * std::declval<TB>().real);
+    using real_t = decltype(std::declval<real_mul_t>() - std::declval<imag_mul_t>());
+    using imag_t = decltype(std::declval<cross1_t>() + std::declval<cross2_t>());
 };
 template<typename TA, typename TB>
 using ComplexMulResult = ComplexValue<
-	typename ComplexMulTypes<TA, TB>::real_t,
-	typename ComplexMulTypes<TA, TB>::imag_t>;
+    typename ComplexMulTypes<TA, TB>::real_t,
+    typename ComplexMulTypes<TA, TB>::imag_t>;
 template<typename TA, typename TB>
 ComplexMulResult<TA, TB> complex_multiply_mixed(const TA& a, const TB& b)
 {
-	#pragma HLS INLINE
-	ComplexMulResult<TA, TB> result;
-	auto rr = a.real * b.real;
-	auto ii = a.imag * b.imag;
-	auto ri = a.real * b.imag;
-	auto ir = a.imag * b.real;
-	result.real = rr - ii;
-	result.imag = ri + ir;
-	return result;
+    #pragma HLS INLINE
+    ComplexMulResult<TA, TB> result;
+    auto rr = a.real * b.real;
+    auto ii = a.imag * b.imag;
+    auto ri = a.real * b.imag;
+    auto ir = a.imag * b.real;
+    result.real = rr - ii;
+    result.imag = ri + ir;
+    return result;
 }
 template<typename RetType, typename TA, typename TB>
 RetType complex_add_mixed(const TA& a, const TB& b)
 {
-	#pragma HLS INLINE
-	RetType result;
-	result.real = a.real + b.real;
-	result.imag = a.imag + b.imag;
-	return result;
+    #pragma HLS INLINE
+    RetType result;
+    result.real = a.real + b.real;
+    result.imag = a.imag + b.imag;
+    return result;
 }
 // 复数加法
 template<typename TA, typename TB>

@@ -2,6 +2,9 @@
 
 本文件集中列出本次对 `MHGD_accel_hw.cpp` 的性能优化点，便于统一查看。
 
+## 更新记录
+- 2026-01-15：新增混合位宽复数运算（`complex_multiply_mixed`/`ComplexMulTypes`），在 `c_matmultiple_hw_pro` 中使用推导位宽的累加类型，仅在写回 `res` 时进行位宽转换。
+
 ## 1. 顶层 Dataflow 与接口优化
 - **移除 `data_distribution` 串行分发**：在 `MHGD_detect_accel_hw` 内直接通过 `H_DISTRIBUTE / Y_DISTRIBUTE / V_DISTRIBUTE` 循环进行并行 fanout，内部 `for (s)` 使用 `#pragma HLS UNROLL`，避免串行瓶颈。
 - **Stream 深度提升**：`H_real_stream/H_imag_stream/y_real_stream/y_imag_stream/v_tb_*_stream` 深度统一设为 256，提升输入 FIFO 缓冲能力，降低 dataflow 停顿风险。
@@ -21,4 +24,3 @@
 - **全展开**：`i/j/l` 三层循环全部 `#pragma HLS UNROLL`，去除内部 pipeline。
 - **完全分区**：对 `matA/matB/res` 使用 `#pragma HLS ARRAY_PARTITION complete`，确保访问并行化。
 - **计算内融合**：不引入独立 Load/Store 阶段，直接在计算循环内读取分区数组并累加。
-

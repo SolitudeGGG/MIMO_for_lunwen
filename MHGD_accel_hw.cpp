@@ -2610,26 +2610,23 @@ void MHGD_detect_accel_hw(
 	unsigned int seed[samplers];
 	#pragma HLS ARRAY_PARTITION variable=sampler_id complete dim=1
 	#pragma HLS ARRAY_PARTITION variable=seed complete dim=1
-	const unsigned int* seed_ptrs[samplers];
-	#pragma HLS ARRAY_PARTITION variable=seed_ptrs complete dim=1
 	for (int s = 0; s < samplers; ++s) {
 		#pragma HLS UNROLL
 		sampler_id[s] = s + 1;
 		switch (s) {
 			case 0:
-				seed_ptrs[s] = &seed_1;
+				seed[s] = seed_1;
 				break;
 			case 1:
-				seed_ptrs[s] = &seed_2;
+				seed[s] = seed_2;
 				break;
 			case 2:
-				seed_ptrs[s] = &seed_3;
+				seed[s] = seed_3;
 				break;
 			default:
-				seed_ptrs[s] = &seed_4;
+				seed[s] = seed_4;
 				break;
 		}
-		seed[s] = *seed_ptrs[s];
 	}
 	#pragma HLS dataflow
 	/**************************** 数据分发 *******************************/
@@ -2640,32 +2637,26 @@ void MHGD_detect_accel_hw(
 		v_imag_t v_i[samplers];
 		#pragma HLS ARRAY_PARTITION variable=v_r complete dim=1
 		#pragma HLS ARRAY_PARTITION variable=v_i complete dim=1
-		const v_real_t* v_real_ptrs[samplers];
-		const v_imag_t* v_imag_ptrs[samplers];
-		#pragma HLS ARRAY_PARTITION variable=v_real_ptrs complete dim=1
-		#pragma HLS ARRAY_PARTITION variable=v_imag_ptrs complete dim=1
 		for (int s = 0; s < samplers; ++s) {
 			#pragma HLS UNROLL
 			switch (s) {
 				case 0:
-					v_real_ptrs[s] = v_tb_real;
-					v_imag_ptrs[s] = v_tb_imag;
+					v_r[s] = v_tb_real[i];
+					v_i[s] = v_tb_imag[i];
 					break;
 				case 1:
-					v_real_ptrs[s] = v_tb_real_2;
-					v_imag_ptrs[s] = v_tb_imag_2;
+					v_r[s] = v_tb_real_2[i];
+					v_i[s] = v_tb_imag_2[i];
 					break;
 				case 2:
-					v_real_ptrs[s] = v_tb_real_3;
-					v_imag_ptrs[s] = v_tb_imag_3;
+					v_r[s] = v_tb_real_3[i];
+					v_i[s] = v_tb_imag_3[i];
 					break;
 				default:
-					v_real_ptrs[s] = v_tb_real_4;
-					v_imag_ptrs[s] = v_tb_imag_4;
+					v_r[s] = v_tb_real_4[i];
+					v_i[s] = v_tb_imag_4[i];
 					break;
 			}
-			v_r[s] = v_real_ptrs[s][i];
-			v_i[s] = v_imag_ptrs[s][i];
 		}
 		for (int s = 0; s < samplers; ++s) {
 			#pragma HLS UNROLL

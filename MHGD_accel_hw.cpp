@@ -3,6 +3,7 @@
 #include "MHGD_accel_hw.h"
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include <utility>
 #include "hls_stream.h"
 
@@ -2627,6 +2628,9 @@ void MHGD_detect_accel_hw(
 				seed[s] = seed_4;
 				break;
 			default:
+#ifndef __SYNTHESIS__
+				assert(false);
+#endif
 				seed[s] = seed_4;
 				break;
 		}
@@ -2660,6 +2664,9 @@ void MHGD_detect_accel_hw(
 					v_i[s] = v_tb_imag_4[i];
 					break;
 				default:
+#ifndef __SYNTHESIS__
+					assert(false);
+#endif
 					v_r[s] = v_tb_real_4[i];
 					v_i[s] = v_tb_imag_4[i];
 					break;
